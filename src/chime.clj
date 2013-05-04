@@ -52,4 +52,9 @@
       (send-off ag (constantly [])))))
 
 
-(chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now) (-> 5 t/secs t/from-now) (-> 6 t/secs t/from-now)] #(println "Chiming!" %))
+(comment
+  (chime-at [(-> 2 t/secs t/from-now)
+             (-> 4 t/secs t/from-now)
+             (-> 5 t/secs t/from-now)
+             (-> 6 t/secs t/from-now)]
+            #(println "Chiming!" %)))
