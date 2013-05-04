@@ -109,7 +109,7 @@ standard Clojure sequence-manipulation functions:
 (->> (periodic-seq (.. (t/now)
                        (withZone (DateTimeZone/forID "America/New_York"))
                        (withTime 0 0 0 0))
-                       (-> 1 t/days))
+                   (-> 1 t/days))
      (filter (comp #{DateTimeConstants.TUESDAY
 	                 DateTimeConstants.FRIDAY}
 				   #(.getDayOfWeek %))))
@@ -118,7 +118,7 @@ standard Clojure sequence-manipulation functions:
 (->> (periodic-seq (.. (t/now)
                        (withZone (DateTimeZone/forID "America/New_York"))
                        (withTime 0 0 0 0))
-                       (-> 1 t/days))
+                   (-> 1 t/days))
      (remove (comp #{DateTimeConstants.SATURDAY
 	                 DateTimeConstants.SUNDAY}
 				   #(.getDayOfWeek %))))
@@ -127,7 +127,7 @@ standard Clojure sequence-manipulation functions:
 (->> (periodic-seq (.. (t/now)
                        (withZone (DateTimeZone/forID "America/New_York"))
                        (withTime 0 0 0 0))
-                       (-> 1 t/days))
+                   (-> 1 t/days))
 
      ;; Get all the Mondays					   
      (filter (comp #{DateTimeConstants.MONDAY}
