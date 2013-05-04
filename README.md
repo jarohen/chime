@@ -137,7 +137,7 @@ standard Clojure sequence-manipulation functions:
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the last one in each month
-	 (mapcat last)
+	 (map last)
 	 
 	 (drop-while #(t/before? % (t/now))))
 
@@ -165,7 +165,7 @@ standard Clojure sequence-manipulation functions:
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the third one in each month
-	 (mapcat #(nth % 2))
+	 (map #(nth % 2))
 	 (drop-while #(t/before? % (t/now))))
 ```
 
