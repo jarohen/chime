@@ -135,13 +135,36 @@ standard Clojure sequence-manipulation functions:
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the last one in each month
-	 (map last)
-     
-	 ;; Re-combine them
-	 (apply concat)
+	 (mapcat last)
 	 
 	 (drop-while #(t/before? % (t/now))))
 
+;; 'Triple witching days':
+;; (The third Fridays in March, June, September and December)
+;; (see http://en.wikipedia.org/wiki/Triple_witching_day)
+;; Here we have to revert the start day to the first day of 
+;; the month so that when we split by month, we know which 
+;; Friday is the third Friday. If it has already passed it 
+;; will be filtered by the `drop-while`.
+
+(->> (periodic-seq (.. (t/now)
+                       (withZone (DateTimeZone/forID "America/New_York"))
+                       (withTime 0 0 0 0)
+					   (withDayOfMonth 1)
+                   (-> 1 t/days))
+
+     (filter (comp #{DateTimeConstants.FRIDAY}
+				   #(.getDayOfWeek %)))
+
+     (filter (comp #{3 6 9 12}
+				   #(.getMonthOfYear %)))
+
+     ;; Split into months
+     (partition-by #(.getMonthOfYear %))
+
+     ;; Only keep the third one in each month
+	 (mapcat #(nth % 2))
+	 (drop-while #(t/before? % (t/now))))
 ```
 
 This is quite a different approach to other scheduling libraries, and
