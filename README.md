@@ -112,7 +112,8 @@ standard Clojure sequence-manipulation functions:
                    (-> 1 t/days))
      (filter (comp #{DateTimeConstants.TUESDAY
 	                 DateTimeConstants.FRIDAY}
-				   #(.getDayOfWeek %))))
+				   #(.getDayOfWeek %)))
+     (drop-while #(t/before? % (t/now))))
 
 ;; Week-days
 (->> (periodic-seq (.. (t/now)
@@ -121,7 +122,8 @@ standard Clojure sequence-manipulation functions:
                    (-> 1 t/days))
      (remove (comp #{DateTimeConstants.SATURDAY
 	                 DateTimeConstants.SUNDAY}
-				   #(.getDayOfWeek %))))
+				   #(.getDayOfWeek %)))
+     (drop-while #(t/before? % (t/now))))
 
 ;; Third Monday of the month:
 (->> (periodic-seq (.. (t/now)
@@ -142,7 +144,9 @@ standard Clojure sequence-manipulation functions:
 	 (map last)
      
 	 ;; Re-combine them
-	 (apply concat))
+	 (apply concat)
+	 
+	 (drop-while #(t/before? % (t/now))))
 
 ```
 
