@@ -54,8 +54,8 @@
 
 
 (comment
-  (chime-at [(-> 2 t/secs t/from-now)
-             (-> 4 t/secs t/from-now)
-             (-> 5 t/secs t/from-now)
-             (-> 6 t/secs t/from-now)]
+  (chime-at [(-> 2 t/secs t/ago)
+             (-> 2 t/secs t/from-now)
+             (-> 3 t/secs t/from-now)
+             (-> 5 t/secs t/from-now)]
             #(println "Chiming!" %)))
