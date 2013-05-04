@@ -45,9 +45,8 @@ a callback function and a sequence of [Joda times][2].
 
 (chime-at [(-> 2 t/secs t/from-now)
            (-> 4 t/secs t/from-now)]
-  (fn [time]
-     (println "Chiming at" time)))
-
+          (fn [time]
+            (println "Chiming at" time)))
 ```
 
 Here we are making use of `clj-time`'s time functions to generate the
@@ -62,12 +61,12 @@ function. This example runs every 5 minutes from now:
 ```clojure
 (:require [chime :refer [chime-at]]
           [clj-time.core :as t]
-		  [clj-time.periodic :refer [periodic-seq]])
+          [clj-time.periodic :refer [periodic-seq]])
 
 (chime-at (rest (periodic-seq (t/now) 
                               (-> 5 t/mins)))
-  (fn [time]
-     (println "Chiming at" time)))
+          (fn [time]
+            (println "Chiming at" time)))
 ```
 
 To start a recurring schedule at a particular time, you can combine
@@ -83,14 +82,14 @@ hasn't already passed, or 8pm tomorrow if it has):
 (:import [org.joda.time DateTimeZone])
 
 (chime-at 
-	(->> (periodic-seq (.. (t/now)
-	                       (withZone (DateTimeZone/forID "America/New_York"))
-                           (withTime 20 0 0 0))
-                       (-> 1 t/days))
-         ;; Just in case it's past 8pm today
-         (drop-while #(t/before? % (t/now))))
-    (fn [time]
-		(println "Chiming at" time)))
+ (->> (periodic-seq (.. (t/now)
+                        (withZone (DateTimeZone/forID "America/New_York"))
+                        (withTime 20 0 0 0))
+                    (-> 1 t/days))
+      ;; Just in case it's past 8pm today
+      (drop-while #(t/before? % (t/now))))
+ (fn [time]
+   (println "Chiming at" time)))
 ```
 
 ### Complex schedules
@@ -103,8 +102,7 @@ Instead, complex schedules can be expressed with liberal use of
 standard Clojure sequence-manipulation functions:
 
 ```clojure
-(:require [chime :refer [chime-at]]
-          [clj-time.core :as t])
+(:require [clj-time.core :as t])
 (:import [org.joda.time DateTimeConstants DateTimeZone])
 
 ;; Every Tuesday and Friday:
@@ -112,34 +110,37 @@ standard Clojure sequence-manipulation functions:
                        (withZone (DateTimeZone/forID "America/New_York"))
                        (withTime 0 0 0 0))
                    (-> 1 t/days))
-     (filter (comp #{DateTimeConstants.TUESDAY
-	                 DateTimeConstants.FRIDAY}
+     (filter (comp #{DateTimeConstants/TUESDAY
+	                 DateTimeConstants/FRIDAY}
 				   #(.getDayOfWeek %)))
      (drop-while #(t/before? % (t/now))))
 
 ;; Week-days
 (->> (periodic-seq ...)
-     (remove (comp #{DateTimeConstants.SATURDAY
-	                 DateTimeConstants.SUNDAY}
-				   #(.getDayOfWeek %)))
+     (remove (comp #{DateTimeConstants/SATURDAY
+                     DateTimeConstants/SUNDAY}
+                   #(.getDayOfWeek %)))
      (drop-while #(t/before? % (t/now))))
 
 ;; Last Monday of the month:
-(->> (periodic-seq ...)
+(->> (periodic-seq (.. (t/now)
+                       (withZone (DateTimeZone/forID "America/New_York"))
+                       (withTime 0 0 0 0))
+                   (-> 1 t/days))
 
      ;; Get all the Mondays					   
-     (filter (comp #{DateTimeConstants.MONDAY}
-				   #(.getDayOfWeek %)))
+     (filter (comp #{DateTimeConstants/MONDAY}
+                   #(.getDayOfWeek %)))
 
      ;; Split into months
-	 ;; (Make sure you use partition-by, not group-by - 
-	 ;;  it's an infinite series!)
+     ;; (Make sure you use partition-by, not group-by - 
+     ;;  it's an infinite series!)
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the last one in each month
-	 (map last)
-	 
-	 (drop-while #(t/before? % (t/now))))
+     (map last)
+     
+     (drop-while #(t/before? % (t/now))))
 
 ;; 'Triple witching days':
 ;; (The third Fridays in March, June, September and December)
@@ -155,7 +156,7 @@ standard Clojure sequence-manipulation functions:
 					   (withDayOfMonth 1)
                    (-> 1 t/days))
 
-     (filter (comp #{DateTimeConstants.FRIDAY}
+     (filter (comp #{DateTimeConstants/FRIDAY}
 				   #(.getDayOfWeek %)))
 
      (filter (comp #{3 6 9 12}
@@ -166,7 +167,7 @@ standard Clojure sequence-manipulation functions:
 
      ;; Only keep the third one in each month
 	 (map #(nth % 2))
-	 (drop-while #(t/before? % (t/now))))
+	 (drop-while #(t/before? % (t/now)))))
 ```
 
 This is quite a different approach to other scheduling libraries, and
