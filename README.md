@@ -52,6 +52,9 @@ a callback function and a sequence of [Joda times][2].
 Here we are making use of `clj-time`'s time functions to generate the
 sequence of Joda times. 
 
+`chime-at` returns a zero-arg function that can be called to cancel
+the schedule.
+
 ### Recurring schedules
 
 To achieve recurring schedules, we can lazily generate an infinite
