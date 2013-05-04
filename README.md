@@ -35,7 +35,9 @@ provided by [`clj-time`][1] - more on this below.)
 ## Usage
 
 Chime consists of one main function, `chime-at`, which is called with
-a callback function and a sequence of Joda times.
+a callback function and a sequence of [Joda times][2].
+
+[2]: http://joda-time.sourceforge.net/
 
 ```clojure
 (:require [chime :refer [chime-at]]
