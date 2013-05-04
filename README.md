@@ -116,20 +116,14 @@ standard Clojure sequence-manipulation functions:
      (drop-while #(t/before? % (t/now))))
 
 ;; Week-days
-(->> (periodic-seq (.. (t/now)
-                       (withZone (DateTimeZone/forID "America/New_York"))
-                       (withTime 0 0 0 0))
-                   (-> 1 t/days))
+(->> (periodic-seq ...)
      (remove (comp #{DateTimeConstants.SATURDAY
 	                 DateTimeConstants.SUNDAY}
 				   #(.getDayOfWeek %)))
      (drop-while #(t/before? % (t/now))))
 
 ;; Third Monday of the month:
-(->> (periodic-seq (.. (t/now)
-                       (withZone (DateTimeZone/forID "America/New_York"))
-                       (withTime 0 0 0 0))
-                   (-> 1 t/days))
+(->> (periodic-seq ...)
 
      ;; Get all the Mondays					   
      (filter (comp #{DateTimeConstants.MONDAY}
