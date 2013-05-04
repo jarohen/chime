@@ -44,7 +44,8 @@
         future-times))))
 
 (defn chime-at [times f]
-  (let [ag (agent times)]
+  (let [future-times (drop-while #(t/before? % (*now*)) times)
+        ag (agent future-times)]
 
     (send-off ag (tick-handler ag (new-scheduler) f))
     

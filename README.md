@@ -35,7 +35,7 @@ provided by [`clj-time`][1] - more on this below.)
 ## Usage
 
 Chime consists of one main function, `chime-at`, which is called with
-a callback function and a sequence of [Joda times][2].
+a callback function and an ordered sequence of [Joda times][2].
 
 [2]: http://joda-time.sourceforge.net/
 
@@ -76,8 +76,7 @@ To start a recurring schedule at a particular time, you can combine
 this example with some standard Clojure functions. Let's say you want
 to run a function at 8pm New York time every day. To generate the
 sequence of times, you'll need to seed the call to `periodic-seq` with
-the next time you want the function to run (i.e. 8pm today if it
-hasn't already passed, or 8pm tomorrow if it has):
+the next time you want the function to run:
 
 ```clojure
 (:require [chime :refer [chime-at]]
@@ -88,12 +87,15 @@ hasn't already passed, or 8pm tomorrow if it has):
  (->> (periodic-seq (.. (t/now)
                         (withZone (DateTimeZone/forID "America/New_York"))
                         (withTime 20 0 0 0))
-                    (-> 1 t/days))
-      ;; Just in case it's past 8pm today
-      (drop-while #(t/before? % (t/now))))
+                    (-> 1 t/days)))
  (fn [time]
    (println "Chiming at" time)))
 ```
+
+Chime does drop any times that have already passed from the front of
+your sequence of times (on the condition that the sequence is ordered)
+so it doesn't matter whether 8pm today has already passed - Chime will
+handle this gracefully.
 
 ### Complex schedules
 
@@ -115,15 +117,13 @@ standard Clojure sequence-manipulation functions:
                    (-> 1 t/days))
      (filter (comp #{DateTimeConstants/TUESDAY
 	                 DateTimeConstants/FRIDAY}
-				   #(.getDayOfWeek %)))
-     (drop-while #(t/before? % (t/now))))
+				   #(.getDayOfWeek %))))
 
 ;; Week-days
 (->> (periodic-seq ...)
      (remove (comp #{DateTimeConstants/SATURDAY
                      DateTimeConstants/SUNDAY}
-                   #(.getDayOfWeek %)))
-     (drop-while #(t/before? % (t/now))))
+                   #(.getDayOfWeek %))))
 
 ;; Last Monday of the month:
 (->> (periodic-seq (.. (t/now)
@@ -141,17 +141,16 @@ standard Clojure sequence-manipulation functions:
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the last one in each month
-     (map last)
-     
-     (drop-while #(t/before? % (t/now))))
+     (map last))
 
-;; 'Triple witching days':
+;; 'Triple witching days': 
 ;; (The third Fridays in March, June, September and December)
 ;; (see http://en.wikipedia.org/wiki/Triple_witching_day)
-;; Here we have to revert the start day to the first day of 
-;; the month so that when we split by month, we know which 
-;; Friday is the third Friday. If it has already passed it 
-;; will be filtered by the `drop-while`.
+
+;; Here we have to revert the start day to the first day of the month
+;; so that when we split by month, we know which Friday is the third
+;; Friday. (Any times that have already passed will be dropped, as
+;; before)
 
 (->> (periodic-seq (.. (t/now)
                        (withZone (DateTimeZone/forID "America/New_York"))
@@ -169,8 +168,7 @@ standard Clojure sequence-manipulation functions:
      (partition-by #(.getMonthOfYear %))
 
      ;; Only keep the third one in each month
-	 (map #(nth % 2))
-	 (drop-while #(t/before? % (t/now)))))
+	 (map #(nth % 2))))
 ```
 
 This is quite a different approach to other scheduling libraries, and
