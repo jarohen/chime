@@ -23,15 +23,14 @@ function at a (possibly infinite) sequence of times. So that is
 exactly what Chime is (and no more!)
 
 Chime doesn't really mind how you generate this sequence of times - in
-the spirit of *composibility* **you are free to choose whatever method
+the spirit of composability **you are free to choose whatever method
 you like!** (yes, even including other cron-style/scheduling DSLs!)
 
 When using Chime in other projects, I have settled on a couple of
 patterns (mainly involving the rather excellent time functions
-provided by [`clj-time`][1] - more on this below.
+provided by [`clj-time`][1] - more on this below.)
 
-[1]: https://github.com/dakrone/clj-time
-**CHECK THIS**
+[1]: https://github.com/clj-time/clj-time
 
 ## Usage
 
@@ -49,7 +48,46 @@ a callback function and a sequence of times.
 
 ```
 
-Here we are making use of `clj-time`
+Here we are making use of `clj-time`'s time functions to generate the
+sequence of times. 
+
+### Recurring schedules
+
+To achieve recurring schedules, we can lazily generate an infinite
+sequence of times using the new (as of 0.5.0) clj-time `periodic-seq`
+function. This example runs every 5 minutes from now:
+
+```clojure
+(:require [chime :refer [chime-at]]
+          [clj-time.core :as t]
+		  [clj-time.periodic :refer [periodic-seq]])
+
+(chime-at (periodic-seq (t/now) (-> 5 t/mins))))
+  (fn [time]
+     (println "Chiming at" time)))
+```
+
+To start a recurring schedule at a particular time, you can combine
+this example with the Chime `next-occurrence-of` utility
+function. Let's say you want to run a function at 8pm New York time
+every day. To generate the sequence of times, you'll need to seed the
+call to `periodic-seq` with the next time you want the function to run
+(i.e. 8pm today if it hasn't already passed, or 8pm tomorrow if it
+has):
+
+```clojure
+(:require [chime :refer [chime-at]]
+          [chime.util :refer [next-occurrence-of]]
+          [clj-time.core :as t])
+(:import [org.joda.time DateTimeZone])
+
+(chime-at 
+	(periodic-seq (next-occurrence-of {:time-of-day [20 0 0 0]
+	                                   :tz (DateTimeZone/forID "America/New_York")})
+                  (-> 1 t/days)))
+    (fn [time]
+		(println "Chiming at" time)))
+```
 
 ## License
 
