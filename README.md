@@ -197,3 +197,6 @@ Thanks!
 Copyright © 2013 James Henderson
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+Big thanks to Malcolm Sparks for providing the initial idea, as well
+as his other contributions and discussions.
