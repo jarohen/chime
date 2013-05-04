@@ -122,7 +122,7 @@ standard Clojure sequence-manipulation functions:
 				   #(.getDayOfWeek %)))
      (drop-while #(t/before? % (t/now))))
 
-;; Third Monday of the month:
+;; Last Monday of the month:
 (->> (periodic-seq ...)
 
      ;; Get all the Mondays					   
