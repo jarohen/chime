@@ -149,6 +149,16 @@ standard Clojure sequence-manipulation functions:
 This is quite a different approach to other scheduling libraries, and
 therefore I would be very interested to hear your thoughts!
 
+## Testing your integration with Chime
+
+Testing time-dependent applications is always more challenging than
+other non-time-dependent systems. Chime makes this easier by allowing
+you to test the sequence of times independently from the execution of
+the scheduled job.
+
+(Although, don't forget to wrap your infinite sequences with `(take x
+...)` when debugging!)
+
 ## Bugs/thoughts/ideas/suggestions/patches etc
 
 Please feel free to submit these through Github in the usual way!
