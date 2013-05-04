@@ -9,7 +9,7 @@ Add the following to your `project.clj` file:
 	[jarohen/chime "0.1.0"]
 
 
-## The **Big Idea**&trade; behind Chime
+## The **'Big Idea'**&trade; behind Chime
 
 The main goal of Chime was to create the simplest possible
 scheduler. Many scheduling libraries have gone before, most attempting
@@ -19,8 +19,8 @@ own. This is all well and good, until your scheduling needs cannot be
 
 When returning to the grass roots of a what a scheduler actually is,
 we realised that a scheduler is really just a promise to execute a
-function at a (possibly infinite) sequence of times. So that is
-exactly what Chime is (and no more!)
+function at a (possibly infinite) sequence of times. So, that is
+exactly what Chime is - and no more!
 
 Chime doesn't really mind how you generate this sequence of times - in
 the spirit of composability **you are free to choose whatever method
@@ -35,7 +35,7 @@ provided by [`clj-time`][1] - more on this below.)
 ## Usage
 
 Chime consists of one main function, `chime-at`, which is called with
-a callback function and a sequence of times.
+a callback function and a sequence of Joda times.
 
 ```clojure
 (:require [chime :refer [chime-at]]
@@ -49,7 +49,7 @@ a callback function and a sequence of times.
 ```
 
 Here we are making use of `clj-time`'s time functions to generate the
-sequence of times. 
+sequence of Joda times. 
 
 ### Recurring schedules
 
