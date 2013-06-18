@@ -67,7 +67,7 @@ function. This example runs every 5 minutes from now:
           [clj-time.periodic :refer [periodic-seq]])
 
 (chime-at (rest (periodic-seq (t/now) 
-                              (-> 5 t/mins)))
+                              (-> 5 t/minutes)))
           (fn [time]
             (println "Chiming at" time)))
 ```
