@@ -6,7 +6,7 @@ Chime is a **really** lightweight Clojure scheduler.
 
 Add the following to your `project.clj` file:
 
-	[jarohen/chime "0.1.0"]
+	[jarohen/chime "0.1.1-SNAPSHOT"]
 
 
 ## The **'Big Idea'**&trade; behind Chime
@@ -174,6 +174,25 @@ standard Clojure sequence-manipulation functions:
 This is quite a different approach to other scheduling libraries, and
 therefore I would be very interested to hear your thoughts!
 
+## Error handling
+
+As of 0.1.1, you can pass an error-handler to `chime-at` - a function
+that takes the exception as an argument. You can either re-throw it,
+to prevent future occurrences of the scheduled task; or squash it to
+try again at the next scheduled time.
+
+By default, Chime will print the stack trace on \*err\*, and continue
+the schedule.
+
+```clojure
+    (chime-at [times...]
+              do-task-fn
+			  {:error-handler (fn [e] 
+			                     ;; log, alert, notify etc?
+						       )})
+```
+							  
+
 ## Testing your integration with Chime
 
 Testing time-dependent applications is always more challenging than
@@ -189,6 +208,16 @@ the scheduled job.
 Please feel free to submit these through Github in the usual way!
 
 Thanks!
+
+## Changes
+
+### 0.1.1
+
+No breaking changes. Added error-handling to `chime-at`.
+
+### 0.1.0
+
+Initial release
 
 ## License
 
