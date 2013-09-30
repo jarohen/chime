@@ -6,7 +6,7 @@ Chime is a **really** lightweight Clojure scheduler.
 
 Add the following to your `project.clj` file:
 
-	[jarohen/chime "0.1.1"]
+	[jarohen/chime "0.1.2"]
 
 
 ## The **'Big Idea'**&trade; behind Chime
@@ -210,6 +210,11 @@ Please feel free to submit these through Github in the usual way!
 Thanks!
 
 ## Changes
+
+### 0.1.2
+
+Bug-fix for race condition - I advise everyone on earlier 0.1.x
+versions to upgrade.
 
 ### 0.1.1
 
