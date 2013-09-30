@@ -6,7 +6,10 @@
   (t/now))
 
 (defn- ms-until [time]
-  (-> (t/interval (*now*) time) (t/in-msecs)))
+  (let [now (*now*)]
+    (if (t/after? time now)
+      (-> (t/interval now time) (t/in-msecs))
+      0)))
 
 (defprotocol TaskScheduler
   (schedule-at [scheduler time f])
