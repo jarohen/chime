@@ -56,8 +56,36 @@ returns a channel that sends an event at each time in the sequence.
                (recur)))))
 #+END_SRC
 
-=chime-ch= returns a channel that, when it is closed by the caller,
-will stop the schedule.
+=chime-ch= uses an unbuffered channel, so cancelling a schedule is
+achieved simply by not reading from the channel.
+
+You can also pass =chime-ch= a buffered channel as an optional
+argument. This is particularly useful if you need to specify the
+behaviour of the scheduler if one job overruns.
+
+=core.async= has three main types of buffers: sliding, dropping and
+fixed. In these examples, imagining an hourly schedule, let's say the
+3pm run finishes at 5:10pm.
+
+- With a =sliding-buffer= (example below), the 4pm job would be cancelled, and the
+  5pm job started at 5:10.
+- With a =dropping-buffer=, the 4pm job would start at 5:10, but the
+  5pm job would be cancelled.
+- In the unbuffered example, above, the 4pm job would have been
+  started at 5:10pm, and the 5pm job starting whenever that finished.
+
+#+BEGIN_SRC clojure
+  (:require [chime :refer [chime-ch]]
+            [clj-time.core :as t]
+            [clojure.core.async :as a :refer [<! go-loop]])
+  
+  (let [chimes (chime-ch times {:ch (a/chan (a/sliding-buffer 1))})]
+    (go-loop []
+      (when-let [time (<! chimes)]
+        ;; ...
+        (recur))))
+#+END_SRC
+
 
 *** =chime-at=
 
@@ -74,7 +102,9 @@ and a callback function:
               (println "Chiming at" time)))
 #+END_SRC
 
-
+With =chime-at=, it is the caller's responsibility to handle
+over-running jobs. =chime-at= will never execute jobs of the same
+scheduler in parallel or drop jobs.
 
 =chime-at= returns a zero-arg function that can be called to cancel
 the schedule.
