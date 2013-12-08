@@ -29,7 +29,7 @@ you like!* (yes, even including other cron-style/scheduling DSLs!)
 
 When using Chime in other projects, I have settled on a couple of
 patterns (mainly involving the rather excellent time functions
-provided by [[https://github.com/clj-time/clj-time][=clj-time=]] - more on this below.)
+provided by [[https://github.com/clj-time/clj-time][clj-time]] - more on this below.)
 
 ** Usage
 
