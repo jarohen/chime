@@ -1,73 +1,75 @@
 (ns chime
-  (:require [clj-time.core :as t])
-  (:import [java.util.concurrent ScheduledExecutorService Executors TimeUnit]))
-
-(defn ^:dynamic *now* []
-  (t/now))
+  (:require [clj-time.core :as t]
+            [clj-time.coerce :as tc]
+            [clojure.core.async :as a :refer [<! >! go-loop]]))
 
 (defn- ms-until [time]
-  (let [now (*now*)]
-    (if (t/after? time now)
-      (-> (t/interval now time) (t/in-msecs))
-      0)))
+  (-> (t/interval (t/now) time) (t/in-millis)))
 
-(defprotocol TaskScheduler
-  (schedule-at [scheduler time f])
-  (shutdown [scheduler]))
+(defn chime-ch
+  "Returns a core.async channel that 'chimes' at every time in the
+  times list. Times that have already passed are ignored.
 
-(extend-protocol TaskScheduler
-  ScheduledExecutorService
-  (schedule-at [executor time f]
-    (. executor (schedule f (ms-until time) TimeUnit/MILLISECONDS)))
-  (shutdown [executor]
-    (. executor (shutdown))))
+  Arguments:
+    times - (required) Sequence of java.util.Dates, org.joda.time.DateTimes
+                       or msecs since epoch
 
-(defn- new-scheduler []
-  (Executors/newSingleThreadScheduledExecutor))
+    ch    - (optional) Channel to chime on - defaults to a new unbuffered channel
 
-(defn- split-at-now [times]
-  (split-with #(t/before? % (*now*)) times))
+  Usage:
 
-(defn- tick-handler [ag scheduler f error-handler]
-  (fn handle-tick [times]
-    (when (seq times)
+    (let [chimes (chime-ch [(-> 2 t/secs t/ago) ; has already passed, will be ignored.
+                            (-> 2 t/secs t/from-now)
+                            (-> 3 t/secs t/from-now)])]
+      (a/<!! (go-loop []
+               (when-let [msg (<! chimes)]
+                 (prn \"Chiming at:\" msg)
+                 (recur)))))
 
-      (let [[past-times future-times] (split-at-now times)]
+  There are extensive usage examples in the README"
+  [times & [{:keys [ch] :or {ch (a/chan)}}]]
+  
+  (go-loop [[next-time & more-times] (->> times
+                                          (map tc/to-date-time)
+                                          (drop-while #(t/before? % (t/now))))]
+    (<! (a/timeout (ms-until next-time)))
+    (>! ch next-time)
 
-        ;; run the fn for any times that have passed
-        (doseq [time past-times]
-          (try
-            (f time)
-            (catch Exception e
-              (error-handler e))))
-
-        ;; reschedule this fn if we have more times
-        (if (seq future-times)
-          (schedule-at scheduler (first future-times) #(send-off ag handle-tick))
-          (shutdown scheduler))
-
-        ;; and keep the future times for the next invocation
-        future-times))))
+    (if (seq more-times)
+      (recur more-times)
+      (a/close! ch)))
+  ch)
 
 (defn chime-at [times f & [{:keys [error-handler]
                             :or {error-handler #(.printStackTrace %)}}]]
-  (let [future-times (drop-while #(t/before? % (*now*)) times)
-        ag (agent future-times)]
-
-    (send-off ag (tick-handler ag (new-scheduler) f error-handler))
+  (let [ch (chime-ch times)
+        cancel-ch (a/chan)]
+    (go-loop []
+      (let [[time c] (a/alts! [cancel-ch ch] :priority true)]
+        (when (and (= c ch) time)
+          (<! (a/thread
+               (try
+                 (f time)
+                 (catch Exception e
+                   (error-handler e)))))
+          (recur))))
     
-    (fn cancel-schedule []
-      (send-off ag (constantly [])))))
-
+    (fn cancel! []
+      (a/close! cancel-ch))))
 
 (comment
+  ;; some quick tests ;)
+
   (chime-at [(-> 2 t/secs t/ago)
              (-> 2 t/secs t/from-now)
              (-> 3 t/secs t/from-now)
              (-> 5 t/secs t/from-now)]
-            #(println "Chiming!" %)))
-
-(comment
-  (chime-at [(-> 2 t/secs t/from-now)
-             (-> 3 t/secs t/from-now)]
-            #(throw (Exception. (format "Failing at time %s." %)))))
+            #(println "Chiming!" %))
+  
+  (let [chimes (chime-ch [(-> 2 t/secs t/ago)
+                          (-> 2 t/secs t/from-now)
+                          (-> 3 t/secs t/from-now)])]
+    (a/<!! (go-loop []
+             (when-let [msg (<! chimes)]
+               (prn "Chiming at:" msg)
+               (recur))))))
