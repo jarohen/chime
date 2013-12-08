@@ -45,7 +45,8 @@ returns a channel that sends an event at each time in the sequence.
 
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-ch]]
-            [clj-time.core :as t])
+            [clj-time.core :as t]
+            [clojure.core.async :as a :refer [<! go-loop]])
   
   (let [chimes (chime-ch [(-> 2 t/secs t/from-now)
                           (-> 3 t/secs t/from-now)])]
