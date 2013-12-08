@@ -40,8 +40,31 @@
       (a/close! ch)))
   ch)
 
+(defn chime-at [times f & [{:keys [error-handler]
+                            :or {error-handler #(.printStackTrace %)}}]]
+  (let [ch (chime-ch times)
+        cancel-ch (a/chan)]
+    (go-loop []
+      (let [[time c] (a/alts! [cancel-ch ch] :priority true)]
+        (when (and (= c ch) time)
+          (<! (a/thread
+               (try
+                 (f time)
+                 (catch Exception e
+                   (error-handler e)))))
+          (recur))))
+    
+    (fn cancel! []
+      (a/close! cancel-ch))))
+
 (comment
-  ;; a quick test ;)
+  ;; some quick tests ;)
+
+  (chime-at [(-> 2 t/secs t/ago)
+             (-> 2 t/secs t/from-now)
+             (-> 3 t/secs t/from-now)
+             (-> 5 t/secs t/from-now)]
+            #(println "Chiming!" %))
   
   (let [chimes (chime-ch [(-> 2 t/secs t/ago)
                           (-> 2 t/secs t/from-now)
