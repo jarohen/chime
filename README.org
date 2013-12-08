@@ -33,8 +33,35 @@ provided by [[https://github.com/clj-time/clj-time][=clj-time=]] - more on this 
 
 ** Usage
 
-Chime consists of one main function, =chime-at=, which is called with
-a callback function and an ordered sequence of [[http://joda-time.sourceforge.net/][Joda times]].
+Chime consists of two main function, =chime-ch= and =chime-at=.
+
+Here we are making use of =clj-time='s time functions to generate the
+sequence of Joda times. 
+
+*** =chime-ch=
+
+=chime-ch= is called with an ordered sequence of [[http://joda-time.sourceforge.net/][Joda times]], and
+returns a channel that sends an event at each time in the sequence.
+
+#+BEGIN_SRC clojure
+  (:require [chime :refer [chime-ch]]
+            [clj-time.core :as t])
+  
+  (let [chimes (chime-ch [(-> 2 t/secs t/from-now)
+                          (-> 3 t/secs t/from-now)])]
+    (a/<!! (go-loop []
+             (when-let [msg (<! chimes)]
+               (prn "Chiming at:" msg)
+               (recur)))))
+#+END_SRC
+
+=chime-ch= returns a channel that, when it is closed by the caller,
+will stop the schedule.
+
+*** =chime-at=
+
+=chime-at=, on the other hand, is called with the sequence of times,
+and a callback function:
 
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-at]]
@@ -46,8 +73,7 @@ a callback function and an ordered sequence of [[http://joda-time.sourceforge.ne
               (println "Chiming at" time)))
 #+END_SRC
 
-Here we are making use of =clj-time='s time functions to generate the
-sequence of Joda times. 
+
 
 =chime-at= returns a zero-arg function that can be called to cancel
 the schedule.
@@ -59,14 +85,11 @@ sequence of times using the new (as of 0.5.0) clj-time =periodic-seq=
 function. This example runs every 5 minutes from now:
 
 #+BEGIN_SRC clojure
-  (:require [chime :refer [chime-at]]
-            [clj-time.core :as t]
+  (:require [clj-time.core :as t]
             [clj-time.periodic :refer [periodic-seq]])
   
-  (chime-at (rest (periodic-seq (t/now) 
-                                (-> 5 t/minutes)))
-            (fn [time]
-              (println "Chiming at" time)))
+  (periodic-seq (t/now) 
+                (-> 5 t/minutes))
 #+END_SRC
 
 To start a recurring schedule at a particular time, you can combine
@@ -76,17 +99,13 @@ sequence of times, you'll need to seed the call to =periodic-seq= with
 the next time you want the function to run:
 
 #+BEGIN_SRC clojure
-  (:require [chime :refer [chime-at]]
-            [clj-time.core :as t])
+  (:require [clj-time.core :as t])
   (:import [org.joda.time DateTimeZone])
   
-  (chime-at 
-   (->> (periodic-seq (.. (t/now)
-                          (withZone (DateTimeZone/forID "America/New_York"))
-                          (withTime 20 0 0 0))
-                      (-> 1 t/days)))
-   (fn [time]
-     (println "Chiming at" time)))
+  (->> (periodic-seq (.. (t/now)
+                         (withZone (DateTimeZone/forID "America/New_York"))
+                         (withTime 20 0 0 0))
+                     (-> 1 t/days)))
 #+END_SRC
 
 Chime does drop any times that have already passed from the front of
