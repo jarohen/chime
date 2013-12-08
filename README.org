@@ -1,6 +1,6 @@
 * Chime
 
-Chime is a **really** lightweight Clojure scheduler.
+Chime is a *really* lightweight Clojure scheduler.
 
 ** Dependency
 
@@ -10,7 +10,7 @@ Add the following to your =project.clj= file:
   [jarohen/chime "0.1.3"]
 #+END_SRC
 
-** The '*Big Idea*' &trade; behind Chime
+** The ‘Big Idea’™ behind Chime
 
 The main goal of Chime was to create the simplest possible
 scheduler. Many scheduling libraries have gone before, most attempting
