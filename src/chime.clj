@@ -3,8 +3,8 @@
             [clj-time.coerce :as tc]
             [clojure.core.async :as a :refer [<! >! go-loop]]))
 
-(defn- ms-until [time]
-  (-> (t/interval (t/now) time) (t/in-millis)))
+(defn- ms-between [start end]
+  (-> (t/interval start end) (t/in-millis)))
 
 (defn chime-ch
   "Returns a core.async channel that 'chimes' at every time in the
@@ -28,15 +28,16 @@
 
   There are extensive usage examples in the README"
   [times & [{:keys [ch] :or {ch (a/chan)}}]]
-  
-  (go-loop [[next-time & more-times] (->> times
+
+  (go-loop [now (t/now)
+            [next-time & more-times] (->> times
                                           (map tc/to-date-time)
-                                          (drop-while #(t/before? % (t/now))))]
-    (<! (a/timeout (ms-until next-time)))
+                                          (drop-while #(t/before? % now)))]
+    (<! (a/timeout (ms-between now next-time)))
     (>! ch next-time)
 
     (if (seq more-times)
-      (recur more-times)
+      (recur (t/now) more-times)
       (a/close! ch)))
   ch)
 
