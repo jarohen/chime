@@ -9,13 +9,13 @@
     Code which exhibits the bug:
 
     #+BEGIN_SRC clojure
-            (let [ch (chime-ch (periodic-seq (-> (t/now)
-                                                 (.withMillisOfSecond 0))
-                                             (-> 1 t/seconds)))]
-              (a/<!! ch)
-              (a/<!! (a/timeout 5000))
-              (a/<!! ch)                      ; Pending timestamp comes through in the past.
-              (a/<!! ch))                     ; Hang (server has fallen over prior to this).
+      (let [ch (chime-ch (periodic-seq (-> (t/now)
+                                           (.withMillisOfSecond 0))
+                                       (-> 1 t/seconds)))]
+        (a/<!! ch)
+        (a/<!! (a/timeout 5000))
+        (a/<!! ch)                      ; Pending timestamp comes through in the past.
+        (a/<!! ch))                     ; Hang (server has fallen over prior to this).
     #+END_SRC
 
     Arguably, clients should be using sliding/dropping buffers if they're not going to pick up times immediately, but the existing code as bombing out the REPL, which isn't nice.
