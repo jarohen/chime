@@ -37,7 +37,11 @@
     (>! ch next-time)
 
     (if (seq more-times)
-      (recur (t/now) more-times)
+      ;; NICK: discard any times now in the past (although the one we've just
+      ;; pushed through might already be in the past, if the receiver is slow).
+
+      (let [now' (t/now)]
+        (recur now' (drop-while #(t/before? % now') more-times)))
       (a/close! ch)))
   ch)
 
@@ -54,7 +58,7 @@
                  (catch Exception e
                    (error-handler e)))))
           (recur))))
-    
+
     (fn cancel! []
       (a/close! cancel-ch))))
 
@@ -66,7 +70,7 @@
              (-> 3 t/secs t/from-now)
              (-> 5 t/secs t/from-now)]
             #(println "Chiming!" %))
-  
+
   (let [chimes (chime-ch [(-> 2 t/secs t/ago)
                           (-> 2 t/secs t/from-now)
                           (-> 3 t/secs t/from-now)])]
