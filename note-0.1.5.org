@@ -18,4 +18,4 @@
         (a/<!! ch))                     ; Hang (server has fallen over prior to this).
     #+END_SRC
 
-    Arguably, clients should be using sliding/dropping buffers if they're not going to pick up times immediately, but the existing code as bombing out the REPL, which isn't nice.
+    Arguably, clients should be using sliding/dropping buffers if they're not going to pick up times immediately, but the existing code is bombing out the REPL, which isn't nice.
