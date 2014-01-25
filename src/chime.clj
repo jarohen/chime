@@ -37,7 +37,11 @@
     (>! ch next-time)
 
     (if (seq more-times)
-      (recur (t/now) more-times)
+      ;; NICK: discard any times now in the past (although the one we've just
+      ;; pushed through might already be in the past, if the receiver is slow).
+
+      (let [now' (t/now)]
+        (recur now' (drop-while #(t/before? % now') more-times)))
       (a/close! ch)))
   ch)
 
