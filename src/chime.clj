@@ -37,11 +37,7 @@
     (>! ch next-time)
 
     (if (seq more-times)
-      ;; NICK: discard any times now in the past (although the one we've just
-      ;; pushed through might already be in the past, if the receiver is slow).
-
-      (let [now' (t/now)]
-        (recur now' (drop-while #(t/before? % now') more-times)))
+      (recur (t/now) more-times)
       (a/close! ch)))
   ch)
 
@@ -61,6 +57,7 @@
     
     (fn cancel! []
       (a/close! cancel-ch))))
+;; ---------- TESTS ----------
 
 (comment
   ;; some quick tests ;)
@@ -78,3 +75,19 @@
              (when-let [msg (<! chimes)]
                (prn "Chiming at:" msg)
                (recur))))))
+
+(comment
+  ;; test case for 0.1.5 bugfix - thanks Nick!
+  (require '[clj-time.periodic :refer [periodic-seq]])
+
+  (let [ch (chime-ch (->> (periodic-seq (-> (-> (t/now) (t/plus (t/seconds 1)))
+                                            (.withMillisOfSecond 0))
+                                        (-> 1 t/seconds))
+                        (take 3)))]
+    
+    (println (a/<!! ch))
+    (println ";; pause")
+    (a/<!! (a/timeout 3000))
+    ;; Pending timestamps come through in the past.
+    (println (a/<!! ch))
+    (println (a/<!! ch)))) 
