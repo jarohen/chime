@@ -1,7 +1,8 @@
 (ns chime
   (:require [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [clojure.core.async :as a :refer [<! >! go-loop]]))
+            [clojure.core.async :as a :refer [<! >! go-loop]]
+            [clojure.core.async.impl.protocols :as p]))
 
 (defn- ms-between [start end]
   (if (t/before? end start)
@@ -17,6 +18,7 @@
                        or msecs since epoch
 
     ch    - (optional) Channel to chime on - defaults to a new unbuffered channel
+                       Closing this channel stops the schedule.
 
   Usage:
 
@@ -31,34 +33,46 @@
   There are extensive usage examples in the README"
   [times & [{:keys [ch] :or {ch (a/chan)}}]]
 
-  (go-loop [now (t/now)
-            [next-time & more-times] (->> times
-                                          (map tc/to-date-time)
-                                          (drop-while #(t/before? % now)))]
-    (<! (a/timeout (ms-between now next-time)))
-    (>! ch next-time)
+  (let [cancel-ch (a/chan)]
+    (go-loop [now (t/now)
+              [next-time & more-times] (->> times
+                                            (map tc/to-date-time)
+                                            (drop-while #(t/before? % now)))]
+      (let [[_ c] (a/alts! [cancel-ch (a/timeout (ms-between now next-time))] :priority true)]
+        (if-not (= c cancel-ch)
+          (do
+            (>! ch next-time)
 
-    (if (seq more-times)
-      (recur (t/now) more-times)
-      (a/close! ch)))
-  ch)
+            (if (seq more-times)
+              (recur (t/now) more-times)
+              (a/close! ch)))
+
+          (a/close! ch))))
+
+    (reify
+      p/ReadPort
+      (take! [_ handler]
+        (p/take! ch handler))
+
+      p/Channel
+      (close! [_] (p/close! cancel-ch)))))
 
 (defn chime-at [times f & [{:keys [error-handler]
                             :or {error-handler #(.printStackTrace %)}}]]
-  (let [ch (chime-ch times)
-        cancel-ch (a/chan)]
+  (let [ch (chime-ch times)]
     (go-loop []
-      (let [[time c] (a/alts! [cancel-ch ch] :priority true)]
-        (when (and (= c ch) time)
-          (<! (a/thread
-               (try
-                 (f time)
-                 (catch Exception e
-                   (error-handler e)))))
-          (recur))))
-    
+      (when-let [time (<! ch)]
+        (<! (a/thread
+              (try
+                (f time)
+                (catch Exception e
+                  (error-handler e)))))
+        (recur)))
+
+
     (fn cancel! []
-      (a/close! cancel-ch))))
+      (a/close! ch))))
+
 ;; ---------- TESTS ----------
 
 (comment
@@ -76,7 +90,17 @@
     (a/<!! (go-loop []
              (when-let [msg (<! chimes)]
                (prn "Chiming at:" msg)
-               (recur))))))
+               (recur)))))
+
+  (let [chimes (chime-ch [(-> 2 t/secs t/ago)
+                          (-> 2 t/secs t/from-now)
+                          (-> 3 t/secs t/from-now)])]
+
+    (a/<!!
+     (a/go
+       (prn (<! chimes))
+       (a/close! chimes)
+       (prn (<! chimes))))))
 
 (comment
   ;; test case for 0.1.5 bugfix - thanks Nick!
