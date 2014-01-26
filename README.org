@@ -86,6 +86,8 @@ fixed. In these examples, imagining an hourly schedule, let's say the
         (recur))))
 #+END_SRC
 
+You can =close!= the channel returned by =chime-ch= to cancel the
+schedule.
 
 *** =chime-at=
 
@@ -262,6 +264,9 @@ Thanks!
 
 Bugfix from Nick Rothwell ([[https://github.com/cassiel][cassiel]]) fixing a negative interval bug -
 thanks!
+
+Also, allowing you to close the channel returned by =chime-ch= to
+cancel the schedule.
 
 No breaking changes
 
