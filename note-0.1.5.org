@@ -1,0 +1,21 @@
+-*- mode: org; mode: visual-line; mode: adaptive-wrap-prefix; -*-
+
+* bug-fix for 0.1.5
+
+  - In =chime.clj=, line 39ff:
+
+    If we are blocked on the channel write, the head of =more-times= might now be in the past, which will blow up the next =ms-between=. Two options: push through all times anyway (i.e. skip the delays until we've caught up), or discard any past times before we loop. This patch does the latter, but in any case it's always possible to get a time in the past since one value can always be pending in the channel. (There should perhaps be another named argument to =chime-ch= to specify catch-up vs. discard.)
+
+    Code which exhibits the bug:
+
+    #+BEGIN_SRC clojure
+      (let [ch (chime-ch (periodic-seq (-> (t/now)
+                                           (.withMillisOfSecond 0))
+                                       (-> 1 t/seconds)))]
+        (a/<!! ch)
+        (a/<!! (a/timeout 5000))
+        (a/<!! ch)                      ; Pending timestamp comes through in the past.
+        (a/<!! ch))                     ; Hang (server has fallen over prior to this).
+    #+END_SRC
+
+    Arguably, clients should be using sliding/dropping buffers if they're not going to pick up times immediately, but the existing code is bombing out the REPL, which isn't nice.
