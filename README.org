@@ -7,7 +7,7 @@ Chime is a *really* lightweight Clojure scheduler.
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.1.4"]
+  [jarohen/chime "0.1.5"]
 #+END_SRC
 
 ** The ‘Big Idea’™ behind Chime
@@ -257,6 +257,13 @@ Please feel free to submit these through Github in the usual way!
 Thanks!
 
 ** Changes
+
+*** 0.1.5
+
+Bugfix from Nick Rothwell ([[https://github.com/cassiel][cassiel]]) fixing a negative interval bug -
+thanks!
+
+No breaking changes
 
 *** 0.1.4
 
