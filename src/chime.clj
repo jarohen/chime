@@ -4,7 +4,9 @@
             [clojure.core.async :as a :refer [<! >! go-loop]]))
 
 (defn- ms-between [start end]
-  (-> (t/interval start end) (t/in-millis)))
+  (if (t/before? end start)
+    0
+    (-> (t/interval start end) (t/in-millis))))
 
 (defn chime-ch
   "Returns a core.async channel that 'chimes' at every time in the
