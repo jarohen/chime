@@ -57,17 +57,19 @@
       p/Channel
       (close! [_] (p/close! cancel-ch)))))
 
-(defn chime-at [times f & [{:keys [error-handler]
-                            :or {error-handler #(.printStackTrace %)}}]]
+(defn chime-at [times f & [{:keys [error-handler end-fn]
+                            :or {error-handler #(.printStackTrace %)
+                                 end-fn #()}}]]
   (let [ch (chime-ch times)]
     (go-loop []
-      (when-let [time (<! ch)]
-        (<! (a/thread
-              (try
-                (f time)
-                (catch Exception e
-                  (error-handler e)))))
-        (recur)))
+      (if-let [time (<! ch)]
+        (do (<! (a/thread
+                  (try
+                    (f time)
+                    (catch Exception e
+                      (error-handler e)))))
+            (recur))
+        (end-fn)))
 
 
     (fn cancel! []
