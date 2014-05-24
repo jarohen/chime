@@ -7,7 +7,7 @@ Chime is a *really* lightweight Clojure scheduler.
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.1.5"]
+  [jarohen/chime "0.1.6"]
 #+END_SRC
 
 ** The ‘Big Idea’™ behind Chime
@@ -110,6 +110,21 @@ scheduler in parallel or drop jobs.
 
 =chime-at= returns a zero-arg function that can be called to cancel
 the schedule.
+
+You can also pass an =on-finished= parameter to =chime-at= to run a
+callback when the schedule has finished (if it's a finite schedule, of
+course!):
+
+#+BEGIN_SRC clojure
+  (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
+            
+            (fn [time]
+              (println "Chiming at" time))
+
+            {:on-finished (fn []
+                            (println "Schedule finished."))})
+
+#+END_SRC
 
 *** Recurring schedules
 
@@ -259,6 +274,11 @@ Please feel free to submit these through Github in the usual way!
 Thanks!
 
 ** Changes
+
+*** 0.1.6
+
+PR from [[https://github.com/BartAdv][Bartosz]] to add an =on-finished= callback to =chime-at= -
+thanks!
 
 *** 0.1.5
 
