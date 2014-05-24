@@ -57,9 +57,9 @@
       p/Channel
       (close! [_] (p/close! cancel-ch)))))
 
-(defn chime-at [times f & [{:keys [error-handler end-fn]
+(defn chime-at [times f & [{:keys [error-handler on-finished]
                             :or {error-handler #(.printStackTrace %)
-                                 end-fn #()}}]]
+                                 on-finished #()}}]]
   (let [ch (chime-ch times)]
     (go-loop []
       (if-let [time (<! ch)]
@@ -69,7 +69,8 @@
                     (catch Exception e
                       (error-handler e)))))
             (recur))
-        (end-fn)))
+        
+        (on-finished)))
 
 
     (fn cancel! []
@@ -102,7 +103,15 @@
      (a/go
        (prn (<! chimes))
        (a/close! chimes)
-       (prn (<! chimes))))))
+       (prn (<! chimes)))))
+
+  (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
+            
+            (fn [time]
+              (println "Chiming at" time))
+
+            {:on-finished (fn []
+                            (println "Schedule finished."))}))
 
 (comment
   ;; test case for 0.1.5 bugfix - thanks Nick!
