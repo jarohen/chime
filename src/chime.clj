@@ -57,10 +57,10 @@
       p/Channel
       (close! [_] (p/close! cancel-ch)))))
 
-(defn chime-at [times f & [{:keys [error-handler on-finished]
+(defn chime-at [times f & [{:keys [error-handler on-finished ch]
                             :or {error-handler #(.printStackTrace %)
                                  on-finished #()}}]]
-  (let [ch (chime-ch times)]
+  (let [ch (chime-ch times (when ch {:ch ch}))]
     (go-loop []
       (if-let [time (<! ch)]
         (do (<! (a/thread
@@ -69,7 +69,7 @@
                     (catch Exception e
                       (error-handler e)))))
             (recur))
-        
+
         (on-finished)))
 
 
@@ -86,7 +86,7 @@
              (-> 3 t/secs t/from-now)
              (-> 5 t/secs t/from-now)]
             #(println "Chiming!" %))
-  
+
   (let [chimes (chime-ch [(-> 2 t/secs t/ago)
                           (-> 2 t/secs t/from-now)
                           (-> 3 t/secs t/from-now)])]
@@ -106,7 +106,7 @@
        (prn (<! chimes)))))
 
   (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
-            
+
             (fn [time]
               (println "Chiming at" time))
 
@@ -121,10 +121,10 @@
                                             (.withMillisOfSecond 0))
                                         (-> 1 t/seconds))
                         (take 3)))]
-    
+
     (println (a/<!! ch))
     (println ";; pause")
     (a/<!! (a/timeout 3000))
     ;; Pending timestamps come through in the past.
     (println (a/<!! ch))
-    (println (a/<!! ch)))) 
+    (println (a/<!! ch))))
