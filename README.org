@@ -2,6 +2,8 @@
 
 Chime is a *really* lightweight Clojure scheduler.
 
+(Despite the last modification date, Chime is still being actively used and maintained - just that there isn't a lot of maintenance to do!) 
+
 ** Dependency
 
 Add the following to your =project.clj= file:
