@@ -4,12 +4,12 @@
             [clojure.core.async :as a :refer [<! >! go-loop]]
             [clojure.core.async.impl.protocols :as p]))
 
-(defn- ms-between [start end]
+(defn ms-between [start end]
   (if (t/before? end start)
     0
     (-> (t/interval start end) (t/in-millis))))
 
-(defn chime-ch
+(defmacro chime-ch
   "Returns a core.async channel that 'chimes' at every time in the
   times list. Times that have already passed are ignored.
 
@@ -31,50 +31,52 @@
                  (recur)))))
 
   There are extensive usage examples in the README"
-  [times & [{:keys [ch] :or {ch (a/chan)}}]]
+  [times & [{:keys [ch]}]]
+  `(let [ch# (or ~ch (a/chan))
+         cancel-ch# (a/chan)]
+     (go-loop [now# (t/now)
+               times# (->> ~times
+                           (map tc/to-date-time)
+                           (drop-while #(t/before? % now#)))]
+       (let [next-time# (first times#)
+             more-times# (rest times#)
+             [_ c#] (a/alts! [cancel-ch# (a/timeout (ms-between now# next-time#))] :priority true)]
+         (if-not (= c# cancel-ch#)
+           (do
+             (>! ch# next-time#)
 
-  (let [cancel-ch (a/chan)]
-    (go-loop [now (t/now)
-              [next-time & more-times] (->> times
-                                            (map tc/to-date-time)
-                                            (drop-while #(t/before? % now)))]
-      (let [[_ c] (a/alts! [cancel-ch (a/timeout (ms-between now next-time))] :priority true)]
-        (if-not (= c cancel-ch)
-          (do
-            (>! ch next-time)
+             (if (seq more-times#)
+               (recur (t/now) more-times#)
+               (a/close! ch#)))
 
-            (if (seq more-times)
-              (recur (t/now) more-times)
-              (a/close! ch)))
+           (a/close! ch#))))
 
-          (a/close! ch))))
+     (reify
+       p/ReadPort
+       (take! [_ handler#]
+         (p/take! ch# handler#))
 
-    (reify
-      p/ReadPort
-      (take! [_ handler]
-        (p/take! ch handler))
+       p/Channel
+       (close! [_] (p/close! cancel-ch#)))))
 
-      p/Channel
-      (close! [_] (p/close! cancel-ch)))))
+(defmacro chime-at [times f & [{:keys [error-handler on-finished]
+                                :or {error-handler #(.printStackTrace %)
+                                     on-finished #()}}]]
+  `(let [ch# (chime-ch ~times)]
+     (go-loop []
+       (if-let [time# (<! ch#)]
+         (do (<! (a/thread
+                   (try
+                     (~f time#)
+                     (catch Exception e#
+                       (~error-handler e#)))))
+             (recur))
 
-(defn chime-at [times f & [{:keys [error-handler on-finished]
-                            :or {error-handler #(.printStackTrace %)
-                                 on-finished #()}}]]
-  (let [ch (chime-ch times)]
-    (go-loop []
-      (if-let [time (<! ch)]
-        (do (<! (a/thread
-                  (try
-                    (f time)
-                    (catch Exception e
-                      (error-handler e)))))
-            (recur))
-        
-        (on-finished)))
+         (~on-finished)))
 
 
-    (fn cancel! []
-      (a/close! ch))))
+     (fn cancel! []
+       (a/close! ch#))))
 
 ;; ---------- TESTS ----------
 
@@ -127,4 +129,4 @@
     (a/<!! (a/timeout 3000))
     ;; Pending timestamps come through in the past.
     (println (a/<!! ch))
-    (println (a/<!! ch)))) 
+    (println (a/<!! ch))))
