@@ -2,7 +2,7 @@
 
 Chime is a *really* lightweight Clojure scheduler.
 
-(Despite the last modification date, Chime is still being actively used and maintained - just that there isn't a lot of maintenance to do!) 
+(Despite the last modification date, Chime is still being actively used and maintained - just that there isn't a lot of maintenance to do!)
 
 ** Dependency
 
@@ -276,6 +276,13 @@ Please feel free to submit these through Github in the usual way!
 Thanks!
 
 ** Changes
+
+*** 0.1.7
+
+We delegate to the thread's uncaught exception handler by default, if
+~error-handler~ isn't provided.
+
+Thanks [[https://github.com/cichli][Michael Griffiths]] :)
 
 *** 0.1.6
 
