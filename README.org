@@ -9,7 +9,7 @@ Chime is a *really* lightweight Clojure scheduler.
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.1.6"]
+  [jarohen/chime "0.1.7"]
 #+END_SRC
 
 ** The ‘Big Idea’™ behind Chime
@@ -38,7 +38,7 @@ provided by [[https://github.com/clj-time/clj-time][clj-time]] - more on this be
 Chime consists of two main function, =chime-ch= and =chime-at=.
 
 Here we are making use of =clj-time='s time functions to generate the
-sequence of Joda times. 
+sequence of Joda times.
 
 *** =chime-ch=
 
@@ -49,7 +49,7 @@ returns a channel that sends an event at each time in the sequence.
   (:require [chime :refer [chime-ch]]
             [clj-time.core :as t]
             [clojure.core.async :as a :refer [<! go-loop]])
-  
+
   (let [chimes (chime-ch [(-> 2 t/secs t/from-now)
                           (-> 3 t/secs t/from-now)])]
     (a/<!! (go-loop []
@@ -80,7 +80,7 @@ fixed. In these examples, imagining an hourly schedule, let's say the
   (:require [chime :refer [chime-ch]]
             [clj-time.core :as t]
             [clojure.core.async :as a :refer [<! go-loop]])
-  
+
   (let [chimes (chime-ch times {:ch (a/chan (a/sliding-buffer 1))})]
     (go-loop []
       (when-let [time (<! chimes)]
@@ -99,7 +99,7 @@ and a callback function:
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-at]]
             [clj-time.core :as t])
-  
+
   (chime-at [(-> 2 t/secs t/from-now)
              (-> 4 t/secs t/from-now)]
             (fn [time]
@@ -119,7 +119,7 @@ course!):
 
 #+BEGIN_SRC clojure
   (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
-            
+
             (fn [time]
               (println "Chiming at" time))
 
@@ -137,8 +137,8 @@ function. This example runs every 5 minutes from now:
 #+BEGIN_SRC clojure
   (:require [clj-time.core :as t]
             [clj-time.periodic :refer [periodic-seq]])
-  
-  (periodic-seq (t/now) 
+
+  (periodic-seq (t/now)
                 (-> 5 t/minutes))
 #+END_SRC
 
@@ -151,7 +151,7 @@ the next time you want the function to run:
 #+BEGIN_SRC clojure
   (:require [clj-time.core :as t])
   (:import [org.joda.time DateTimeZone])
-  
+
   (->> (periodic-seq (.. (t/now)
                          (withZone (DateTimeZone/forID "America/New_York"))
                          (withTime 20 0 0 0))
@@ -175,7 +175,7 @@ standard Clojure sequence-manipulation functions:
 #+BEGIN_SRC clojure
   (:require [clj-time.core :as t])
   (:import [org.joda.time DateTimeConstants DateTimeZone])
-  
+
   ;; Every Tuesday and Friday:
   (->> (periodic-seq (.. (t/now)
                          (withZone (DateTimeZone/forID "America/New_York"))
@@ -184,55 +184,55 @@ standard Clojure sequence-manipulation functions:
        (filter (comp #{DateTimeConstants/TUESDAY
                        DateTimeConstants/FRIDAY}
                      #(.getDayOfWeek %))))
-  
+
   ;; Week-days
   (->> (periodic-seq ...)
        (remove (comp #{DateTimeConstants/SATURDAY
                        DateTimeConstants/SUNDAY}
                      #(.getDayOfWeek %))))
-  
+
   ;; Last Monday of the month:
   (->> (periodic-seq (.. (t/now)
                          (withZone (DateTimeZone/forID "America/New_York"))
                          (withTime 0 0 0 0))
                      (-> 1 t/days))
-  
-       ;; Get all the Mondays                                        
+
+       ;; Get all the Mondays
        (filter (comp #{DateTimeConstants/MONDAY}
                      #(.getDayOfWeek %)))
-  
+
        ;; Split into months
-       ;; (Make sure you use partition-by, not group-by - 
+       ;; (Make sure you use partition-by, not group-by -
        ;;  it's an infinite series!)
        (partition-by #(.getMonthOfYear %))
-  
+
        ;; Only keep the last one in each month
        (map last))
-  
-  ;; 'Triple witching days': 
+
+  ;; 'Triple witching days':
   ;; (The third Fridays in March, June, September and December)
   ;; (see http://en.wikipedia.org/wiki/Triple_witching_day)
-  
+
   ;; Here we have to revert the start day to the first day of the month
   ;; so that when we split by month, we know which Friday is the third
   ;; Friday. (Any times that have already passed will be dropped, as
   ;; before)
-  
+
   (->> (periodic-seq (.. (t/now)
                          (withZone (DateTimeZone/forID "America/New_York"))
                          (withTime 0 0 0 0)
                          (withDayOfMonth 1)
                          (-> 1 t/days))
-  
+
                      (filter (comp #{DateTimeConstants/FRIDAY}
                                    #(.getDayOfWeek %)))
-  
+
                      (filter (comp #{3 6 9 12}
                                    #(.getMonthOfYear %)))
-  
+
                      ;; Split into months
                      (partition-by #(.getMonthOfYear %))
-  
+
                      ;; Only keep the third one in each month
                      (map #(nth % 2))))
 #+END_SRC
@@ -247,17 +247,17 @@ that takes the exception as an argument. You can either re-throw it,
 to prevent future occurrences of the scheduled task; or squash it to
 try again at the next scheduled time.
 
-By default, Chime will print the stack trace on \*err\*, and continue
-the schedule.
+By default, Chime will re-throw the error to the thread's uncaught exception
+handler.
 
 #+BEGIN_SRC clojure
   (chime-at [times...]
             do-task-fn
-            {:error-handler (fn [e] 
+            {:error-handler (fn [e]
                               ;; log, alert, notify etc?
                               )})
 #+END_SRC
-							  
+
 
 ** Testing your integration with Chime
 
