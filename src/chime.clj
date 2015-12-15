@@ -38,16 +38,17 @@
               [next-time & more-times] (->> times
                                             (map tc/to-date-time)
                                             (drop-while #(t/before? % now)))]
-      (let [[_ c] (a/alts! [cancel-ch (a/timeout (ms-between now next-time))] :priority true)]
-        (if-not (= c cancel-ch)
-          (do
+      (a/alt!
+        cancel-ch (a/close! ch)
+
+        (a/timeout (ms-between now next-time)) (do
             (>! ch next-time)
 
             (if (seq more-times)
               (recur (t/now) more-times)
               (a/close! ch)))
 
-          (a/close! ch))))
+        :priority true))
 
     (reify
       p/ReadPort
