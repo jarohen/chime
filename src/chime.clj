@@ -33,20 +33,21 @@
   There are extensive usage examples in the README"
   [times & [{:keys [ch] :or {ch (a/chan)}}]]
 
-  (let [cancel-ch (a/chan)]
+  (let [cancel-ch (a/chan)
+        times-fn (^:once fn* [] times)]
     (go-loop [now (t/now)
-              [next-time & more-times] (->> times
+              [next-time & more-times] (->> (times-fn)
                                             (map tc/to-date-time)
                                             (drop-while #(t/before? % now)))]
       (a/alt!
         cancel-ch (a/close! ch)
 
         (a/timeout (ms-between now next-time)) (do
-            (>! ch next-time)
+                                                 (>! ch next-time)
 
-            (if (seq more-times)
-              (recur (t/now) more-times)
-              (a/close! ch)))
+                                                 (if (seq more-times)
+                                                   (recur (t/now) more-times)
+                                                   (a/close! ch)))
 
         :priority true))
 
