@@ -22,9 +22,9 @@
 
   Usage:
 
-    (let [chimes (chime-ch [(-> 2 t/secs t/ago) ; has already passed, will be ignored.
-                            (-> 2 t/secs t/from-now)
-                            (-> 3 t/secs t/from-now)])]
+    (let [chimes (chime-ch [(-> 2 t/seconds t/ago) ; has already passed, will be ignored.
+                            (-> 2 t/seconds t/from-now)
+                            (-> 3 t/seconds t/from-now)])]
       (a/<!! (go-loop []
                (when-let [msg (<! chimes)]
                  (prn \"Chiming at:\" msg)
@@ -82,23 +82,23 @@
 (comment
   ;; some quick tests ;)
 
-  (chime-at [(-> 2 t/secs t/ago)
-             (-> 2 t/secs t/from-now)
-             (-> 3 t/secs t/from-now)
-             (-> 5 t/secs t/from-now)]
+  (chime-at [(-> 2 t/seconds t/ago)
+             (-> 2 t/seconds t/from-now)
+             (-> 3 t/seconds t/from-now)
+             (-> 5 t/seconds t/from-now)]
             #(println "Chiming!" %))
 
-  (let [chimes (chime-ch [(-> 2 t/secs t/ago)
-                          (-> 2 t/secs t/from-now)
-                          (-> 3 t/secs t/from-now)])]
+  (let [chimes (chime-ch [(-> 2 t/seconds t/ago)
+                          (-> 2 t/seconds t/from-now)
+                          (-> 3 t/seconds t/from-now)])]
     (a/<!! (go-loop []
              (when-let [msg (<! chimes)]
                (prn "Chiming at:" msg)
                (recur)))))
 
-  (let [chimes (chime-ch [(-> 2 t/secs t/ago)
-                          (-> 2 t/secs t/from-now)
-                          (-> 3 t/secs t/from-now)])]
+  (let [chimes (chime-ch [(-> 2 t/seconds t/ago)
+                          (-> 2 t/seconds t/from-now)
+                          (-> 3 t/seconds t/from-now)])]
 
     (a/<!!
      (a/go
@@ -106,7 +106,7 @@
        (a/close! chimes)
        (prn (<! chimes)))))
 
-  (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
+  (chime-at [(-> 2 t/seconds t/from-now) (-> 4 t/seconds t/from-now)]
 
             (fn [time]
               (println "Chiming at" time))
