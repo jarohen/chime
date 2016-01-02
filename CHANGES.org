@@ -1,5 +1,5 @@
 * Changes
-** 0.1.8
+** 0.1.8 / 0.1.9
 
 Bugfix to work around http://dev.clojure.org/jira/browse/ASYNC-138
 (work around in http://dev.clojure.org/jira/browse/ASYNC-32). Thanks
@@ -7,6 +7,8 @@ to [[https://github.com/bronsa][Nicola Mometto]] and [[https://github.com/schmfr
 
 Deps bump to Clojure 1.7, core.async 0.2.374, and clj-time 0.11 -
 thanks [[https://github.com/scribahti][@scribahti]].
+
+Deploying 0.1.9 because Clojars part-failed on 0.1.8
 
 ** 0.1.7
 
