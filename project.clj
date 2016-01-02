@@ -1,4 +1,4 @@
-(defproject jarohen/chime "0.1.7"
+(defproject jarohen/chime "0.1.8"
   :description "A really lightweight Clojure scheduler"
   :url "https://github.com/james-henderson/chime.git"
   :license {:name "Eclipse Public License"

@@ -1,0 +1,58 @@
+* Changes
+** 0.1.8
+
+Bugfix to work around http://dev.clojure.org/jira/browse/ASYNC-138
+(work around in http://dev.clojure.org/jira/browse/ASYNC-32). Thanks
+to [[https://github.com/bronsa][Nicola Mometto]] and [[https://github.com/schmfr][@schmfr]] for helping to track it down!
+
+Deps bump to Clojure 1.7, core.async 0.2.374, and clj-time 0.11 -
+thanks [[https://github.com/scribahti][@scribahti]].
+
+** 0.1.7
+
+We delegate to the thread's uncaught exception handler by default, if
+~error-handler~ isn't provided.
+
+Thanks [[https://github.com/cichli][Michael Griffiths]] :)
+
+** 0.1.6
+
+PR from [[https://github.com/BartAdv][Bartosz]] to add an =on-finished= callback to =chime-at= -
+thanks!
+
+** 0.1.5
+
+Bugfix from Nick Rothwell ([[https://github.com/cassiel][cassiel]]) fixing a negative interval bug -
+thanks!
+
+Also, allowing you to close the channel returned by =chime-ch= to
+cancel the schedule.
+
+No breaking changes
+
+** 0.1.4
+
+Bugfix from Philipp Rockel ([[https://github.com/rockolo][rockolo]]) fixing a negative interval race
+condition - thanks!
+
+No breaking changes
+
+** 0.1.3
+
+Added =chime-ch=, returning a channel. Re-implemented =chime-at= in
+terms of =chime-at=.
+
+No breaking changes
+
+** 0.1.2
+
+Bug-fix for race condition - I advise everyone on earlier 0.1.x
+versions to upgrade.
+
+** 0.1.1
+
+No breaking changes. Added error-handling to =chime-at=.
+
+** 0.1.0
+
+Initial release
