@@ -138,8 +138,9 @@ function. This example runs every 5 minutes from now:
   (:require [clj-time.core :as t]
             [clj-time.periodic :refer [periodic-seq]])
 
-  (periodic-seq (t/now)
-                (-> 5 t/minutes))
+  (rest    ; excludes *right now*
+   (periodic-seq (t/now)
+                 (-> 5 t/minutes)))
 #+END_SRC
 
 To start a recurring schedule at a particular time, you can combine
@@ -258,6 +259,27 @@ handler.
                               )})
 #+END_SRC
 
+** Behaviour of =(t/now)=
+
+Sometimes, you'll want a schedule along the lines of 'every <x>
+<time-unit>'. The temptation here is to create a sequence of times
+with: =(periodic-seq (t/now) (t/minutes 5))= - however, this can lead
+to non-deterministic behaviour. Sometimes Chime will run the function
+immediately, sometimes it won't.
+
+The reason for this is a combination of two factors:
+- Chime removes times in the past from your sequence. This is so that,
+  when you want a schedule like '6am daily', you can pass
+  =(periodic-seq (t/today-at 6 0) (t/days 1))=, without worrying
+  whether 6am has already passed today.
+- There's a slight delay between your call to =(t/now)= and Chime's
+  check for times in the past. Chime (like joda-time) resolves times
+  to the nearest millisecond so, if these two checks occur in the same
+  millisecond, your schedule will run immediately - if not, it won't.
+
+The solution to this is to exclude =(t/now)= from the schedule -
+achieved with something like =(rest (periodic-seq (t/now) (t/minutes
+5)))=.
 
 ** Testing your integration with Chime
 
