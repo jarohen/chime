@@ -1,4 +1,12 @@
 * Changes
+** 0.2.0
+
+Breaking change/functionality clarification: previously, if a job was scheduled
+before the timer was cancelled, the job would still run. After 0.2.0, jobs that
+haven't started before the timer is cancelled will not run.
+
+Thanks to Dave Harlan ([[https://github.com/dkharlan][dkharlen]]) for raising the issue!
+
 ** 0.1.8 / 0.1.9
 
 Bugfix to work around http://dev.clojure.org/jira/browse/ASYNC-138

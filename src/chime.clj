@@ -61,23 +61,26 @@
 
 (defn chime-at [times f & [{:keys [error-handler on-finished]
                             :or {on-finished #()}}]]
-  (let [ch (chime-ch times)]
+  (let [ch (chime-ch times)
+        !cancelled? (atom false)]
     (go-loop []
       (if-let [time (<! ch)]
-        (do (<! (a/thread
-                  (try
-                    (f time)
-                    (catch Exception e
-                      (if error-handler
-                        (error-handler e)
-                        (throw e))))))
-            (recur))
+        (do
+          (<! (a/thread
+                (try
+                  (when-not @!cancelled?
+                    (f time))
+                  (catch Exception e
+                    (if error-handler
+                      (error-handler e)
+                      (throw e))))))
+          (recur))
 
         (on-finished)))
 
-
     (fn cancel! []
-      (a/close! ch))))
+      (a/close! ch)
+      (reset! !cancelled? true))))
 
 ;; ---------- TESTS ----------
 
@@ -131,3 +134,20 @@
     ;; Pending timestamps come through in the past.
     (println (a/<!! ch))
     (println (a/<!! ch))))
+
+(comment
+  ;; code from #16 - thanks Dave!
+
+  (defn do-stuff [now]
+    (println "starting" now)
+    (Thread/sleep 3000) ;; some overrunning task
+    (println "done" now))
+
+  (require '[clj-time.periodic :refer [periodic-seq]])
+
+  (def cancel-stuff!
+    (chime-at (rest (periodic-seq (t/now) (t/seconds 2))) do-stuff))
+
+  (cancel-stuff!)
+
+  )
