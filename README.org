@@ -50,8 +50,8 @@ returns a channel that sends an event at each time in the sequence.
             [clj-time.core :as t]
             [clojure.core.async :as a :refer [<! go-loop]])
 
-  (let [chimes (chime-ch [(-> 2 t/secs t/from-now)
-                          (-> 3 t/secs t/from-now)])]
+  (let [chimes (chime-ch [(-> 2 t/seconds t/from-now)
+                          (-> 3 t/seconds t/from-now)])]
     (a/<!! (go-loop []
              (when-let [msg (<! chimes)]
                (prn "Chiming at:" msg)
@@ -100,8 +100,8 @@ and a callback function:
   (:require [chime :refer [chime-at]]
             [clj-time.core :as t])
 
-  (chime-at [(-> 2 t/secs t/from-now)
-             (-> 4 t/secs t/from-now)]
+  (chime-at [(-> 2 t/seconds t/from-now)
+             (-> 4 t/seconds t/from-now)]
             (fn [time]
               (println "Chiming at" time)))
 #+END_SRC
@@ -119,7 +119,7 @@ callback when the schedule has finished (if it's a finite schedule, of
 course!):
 
 #+BEGIN_SRC clojure
-  (chime-at [(-> 2 t/secs t/from-now) (-> 4 t/secs t/from-now)]
+  (chime-at [(-> 2 t/seconds t/from-now) (-> 4 t/seconds t/from-now)]
 
             (fn [time]
               (println "Chiming at" time))
