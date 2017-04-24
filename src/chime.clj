@@ -36,20 +36,21 @@
   (let [cancel-ch (a/chan)
         times-fn (^:once fn* [] times)]
     (go-loop [now (t/now)
-              [next-time & more-times] (->> (times-fn)
-                                            (map tc/to-date-time)
-                                            (drop-while #(t/before? % now)))]
-      (a/alt!
-        cancel-ch (a/close! ch)
+              times-seq (->> (times-fn)
+                             (map tc/to-date-time)
+                             (drop-while #(t/before? % now)))]
+      (if-let [[next-time & more-times] (seq times-seq)]
+        (a/alt!
+          cancel-ch (a/close! ch)
 
-        (a/timeout (ms-between now next-time)) (do
-                                                 (>! ch next-time)
+          (a/timeout (ms-between now next-time)) (do
+                                                   (>! ch next-time)
 
-                                                 (if (seq more-times)
-                                                   (recur (t/now) more-times)
-                                                   (a/close! ch)))
+                                                   (recur (t/now) more-times))
 
-        :priority true))
+          :priority true)
+
+        (a/close! ch)))
 
     (reify
       p/ReadPort
@@ -150,4 +151,10 @@
 
   (cancel-stuff!)
 
+  )
+
+(comment
+  ;; code from #20 - thanks Alex!
+
+  (chime-at (map #(-> % t/minutes t/ago) [5 4 3 2]) println {:on-finished #(println "Finished")})
   )

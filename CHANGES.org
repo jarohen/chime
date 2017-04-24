@@ -1,4 +1,8 @@
 * Changes
+** 0.2.1
+Chime correctly handles empty time seqs - thanks to Alex ter Weele ([[https://github.com/aterweele][aterweele]])
+for the report.
+
 ** 0.2.0
 
 Breaking change/functionality clarification: previously, if a job was scheduled

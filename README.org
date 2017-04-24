@@ -9,7 +9,7 @@ Chime is a *really* lightweight Clojure scheduler.
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.2.0"]
+  [jarohen/chime "0.2.1"]
 #+END_SRC
 
 ** The ‘Big Idea’™ behind Chime
