@@ -2,7 +2,13 @@
 
 Chime is a *really* lightweight Clojure scheduler.
 
-(Despite the last modification date, Chime is still being actively used and maintained - just that there isn't a lot of maintenance to do!)
+#+BEGIN_QUOTE
+I'd recommend you check out [[https://github.com/juxt/tick][JUXT's 'tick']] library - it's likely going to get more community support with JUXT's backing than I can give Chime.
+
+Thank you for all your help and support with Chime!
+
+James
+#+END_QUOTE
 
 ** Dependency
 
