@@ -15,7 +15,7 @@ James
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.2.1"]
+  [jarohen/chime "0.2.2"]
 #+END_SRC
 
 ** The ‘Big Idea’™ behind Chime

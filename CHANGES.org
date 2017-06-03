@@ -1,4 +1,8 @@
 * Changes
+** 0.2.2
+core.async bumped from 0.2.374 t0 0.3.442 to avoid spec problem (#21) - thanks
+to Dexter Gramfors ([[https://github.com/Dexterminator][Dexterminator]]) for the PR
+
 ** 0.2.1
 Chime correctly handles empty time seqs - thanks to Alex ter Weele ([[https://github.com/aterweele][aterweele]])
 for the report.
