@@ -58,7 +58,8 @@
         (p/take! ch handler))
 
       p/Channel
-      (close! [_] (p/close! cancel-ch)))))
+      (close! [_] (p/close! cancel-ch))
+      (closed? [_] (p/closed? cancel-ch)))))
 
 (defn chime-at [times f & [{:keys [error-handler on-finished]
                             :or {on-finished #()}}]]
