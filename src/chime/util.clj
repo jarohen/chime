@@ -1,5 +1,4 @@
-(ns chime.util
-  (:require [clj-time.core :as t]))
+(ns chime.util)
 
 (defn merge-schedules [left right]
   (lazy-seq
@@ -9,6 +8,6 @@
        [true false] left
        [true true] (let [[l & lmore] left
                          [r & rmore] right]
-                     (if (t/before? l r)
+                     (if (.isBefore l r)
                        (cons l (merge-schedules lmore right))
                        (cons r (merge-schedules left rmore)))))))

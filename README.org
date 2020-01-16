@@ -29,7 +29,7 @@ you like!* (yes, even including other cron-style/scheduling DSLs!)
 
 When using Chime in other projects, I have settled on a couple of
 patterns (mainly involving the rather excellent time functions
-provided by [[https://github.com/clj-time/clj-time][clj-time]] - more on this below.)
+provided by [[https://docs.oracle.com/javase/8/docs/api/java/time/package-summary.html][java.time]] - more on this below.)
 
 ** Usage
 
@@ -40,16 +40,16 @@ sequence of Joda times.
 
 *** =chime-ch=
 
-=chime-ch= is called with an ordered sequence of [[http://joda-time.sourceforge.net/][Joda times]], and
+=chime-ch= is called with an ordered sequence of
+[[https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html][instants]], and
 returns a channel that sends an event at each time in the sequence.
 
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-ch]]
-            [clj-time.core :as t]
             [clojure.core.async :as a :refer [<! go-loop]])
 
-  (let [chimes (chime-ch [(-> 2 t/seconds t/from-now)
-                          (-> 3 t/seconds t/from-now)])]
+  (let [chimes (chime-ch [(.plusSeconds (java.time.Instant/now) 2)
+                          (.plusSeconds (java.time.Instant/now) 3)])]
     (a/<!! (go-loop []
              (when-let [msg (<! chimes)]
                (prn "Chiming at:" msg)
@@ -76,7 +76,6 @@ fixed. In these examples, imagining an hourly schedule, let's say the
 
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-ch]]
-            [clj-time.core :as t]
             [clojure.core.async :as a :refer [<! go-loop]])
 
   (let [chimes (chime-ch times {:ch (a/chan (a/sliding-buffer 1))})]
@@ -95,11 +94,10 @@ schedule.
 and a callback function:
 
 #+BEGIN_SRC clojure
-  (:require [chime :refer [chime-at]]
-            [clj-time.core :as t])
+  (:require [chime :refer [chime-at]])
 
-  (chime-at [(-> 2 t/seconds t/from-now)
-             (-> 4 t/seconds t/from-now)]
+  (chime-at [(.plusSeconds (java.time.Instant/now) 2)
+             (.plusSeconds (java.time.Instant/now) 4)]
             (fn [time]
               (println "Chiming at" time)))
 #+END_SRC
@@ -117,7 +115,7 @@ callback when the schedule has finished (if it's a finite schedule, of
 course!):
 
 #+BEGIN_SRC clojure
-  (chime-at [(-> 2 t/seconds t/from-now) (-> 4 t/seconds t/from-now)]
+  (chime-at [(.plusSeconds (java.time.Instant/now) 2) (.plusSeconds (java.time.Instant/now) 4)]
 
             (fn [time]
               (println "Chiming at" time))
@@ -130,16 +128,17 @@ course!):
 *** Recurring schedules
 
 To achieve recurring schedules, we can lazily generate an infinite
-sequence of times using the new (as of 0.5.0) clj-time =periodic-seq=
-function. This example runs every 5 minutes from now:
+sequence of times. This example runs every 5 minutes from now:
 
 #+BEGIN_SRC clojure
-  (:require [clj-time.core :as t]
-            [clj-time.periodic :refer [periodic-seq]])
+  (defn periodic-seq [^java.time.Instant start duration-or-period]
+      (iterate
+        #(.addTo duration-or-period %)
+        start))
 
   (rest    ; excludes *right now*
-   (periodic-seq (t/now)
-                 (-> 5 t/minutes)))
+   (periodic-seq (java.time.Instant/now)
+                 (java.time.Duration/ofMinutes 5)))
 #+END_SRC
 
 To start a recurring schedule at a particular time, you can combine
@@ -152,10 +151,11 @@ the next time you want the function to run:
   (:require [clj-time.core :as t])
   (:import [org.joda.time DateTimeZone])
 
-  (->> (periodic-seq (.. (t/now)
-                         (withZone (DateTimeZone/forID "America/New_York"))
-                         (withTime 20 0 0 0))
-                     (-> 1 t/days)))
+  (->> (periodic-seq (.toInstant
+                       (.adjustInto
+                         (java.time.LocalTime/of 20 0 0)
+                         (java.time.ZonedDateTime/now (java.time.ZoneId/of "America/New_York"))))
+                     (java.time.Period/ofDays period-days)))
 #+END_SRC
 
 Chime does drop any times that have already passed from the front of
@@ -173,38 +173,35 @@ Instead, complex schedules can be expressed with liberal use of
 standard Clojure sequence-manipulation functions:
 
 #+BEGIN_SRC clojure
-  (:require [clj-time.core :as t])
-  (:import [org.joda.time DateTimeConstants DateTimeZone])
+  (:import [java.time ZonedDateTime ZoneId Period LocalTime DayOfWeek])
 
   ;; Every Tuesday and Friday:
-  (->> (periodic-seq (.. (t/now)
-                         (withZone (DateTimeZone/forID "America/New_York"))
-                         (withTime 0 0 0 0))
-                     (-> 1 t/days))
-       (filter (comp #{DateTimeConstants/TUESDAY
-                       DateTimeConstants/FRIDAY}
+  (->> (periodic-seq (.toInstant
+                       (.adjustInto
+                         (java.time.LocalTime/of 0 0)
+                         (ZonedDateTime/now (ZoneId/of "America/New_York"))))
+                     (Period/ofDays period-days))
+       (filter (comp #{DayOfWeek/TUESDAY
+                       DayOfWeek/FRIDAY}
                      #(.getDayOfWeek %))))
 
   ;; Week-days
   (->> (periodic-seq ...)
-       (remove (comp #{DateTimeConstants/SATURDAY
-                       DateTimeConstants/SUNDAY}
+       (remove (comp #{DayOfWeek/SATURDAY
+                       DayOfWeek/SUNDAY}
                      #(.getDayOfWeek %))))
 
   ;; Last Monday of the month:
-  (->> (periodic-seq (.. (t/now)
-                         (withZone (DateTimeZone/forID "America/New_York"))
-                         (withTime 0 0 0 0))
-                     (-> 1 t/days))
+  (->> (periodic-seq ...)
 
        ;; Get all the Mondays
-       (filter (comp #{DateTimeConstants/MONDAY}
+       (filter (comp #{DayOfWeek/MONDAY}
                      #(.getDayOfWeek %)))
 
        ;; Split into months
        ;; (Make sure you use partition-by, not group-by -
        ;;  it's an infinite series!)
-       (partition-by #(.getMonthOfYear %))
+       (partition-by #(.getMonth %))
 
        ;; Only keep the last one in each month
        (map last))
@@ -218,20 +215,20 @@ standard Clojure sequence-manipulation functions:
   ;; Friday. (Any times that have already passed will be dropped, as
   ;; before)
 
-  (->> (periodic-seq (.. (t/now)
-                         (withZone (DateTimeZone/forID "America/New_York"))
-                         (withTime 0 0 0 0)
-                         (withDayOfMonth 1)
-                         (-> 1 t/days))
+  (->> (periodic-seq (.toInstant
+                       (.adjustInto
+                         (java.time.LocalTime/of 0 0)
+                         (.withDayOfMonth (ZonedDateTime/now (ZoneId/of "America/New_York")) 1)))
+                     (Period/ofDays period-days))
 
-                     (filter (comp #{DateTimeConstants/FRIDAY}
+                     (filter (comp #{DayOfWeek/FRIDAY}
                                    #(.getDayOfWeek %)))
 
                      (filter (comp #{3 6 9 12}
-                                   #(.getMonthOfYear %)))
+                                   #(.getMonthValue %)))
 
                      ;; Split into months
-                     (partition-by #(.getMonthOfYear %))
+                     (partition-by #(.getMonthValue %))
 
                      ;; Only keep the third one in each month
                      (map #(nth % 2))))
@@ -258,26 +255,25 @@ handler.
                               )})
 #+END_SRC
 
-** Behaviour of =(t/now)=
+** Behaviour of =(Instant/now)=
 
 Sometimes, you'll want a schedule along the lines of 'every <x>
 <time-unit>'. The temptation here is to create a sequence of times
-with: =(periodic-seq (t/now) (t/minutes 5))= - however, this can lead
+with: =(periodic-seq (Instance/now) (Duration/ofMinutes 5))= - however, this can lead
 to non-deterministic behaviour. Sometimes Chime will run the function
 immediately, sometimes it won't.
 
 The reason for this is a combination of two factors:
 - Chime removes times in the past from your sequence. This is so that,
-  when you want a schedule like '6am daily', you can pass
-  =(periodic-seq (t/today-at 6 0) (t/days 1))=, without worrying
+  when you want a schedule like '6am daily', you can pass that, without worrying
   whether 6am has already passed today.
-- There's a slight delay between your call to =(t/now)= and Chime's
-  check for times in the past. Chime (like joda-time) resolves times
+- There's a slight delay between your call to =(Instant/now)= and Chime's
+  check for times in the past. Chime resolves times
   to the nearest millisecond so, if these two checks occur in the same
   millisecond, your schedule will run immediately - if not, it won't.
 
-The solution to this is to exclude =(t/now)= from the schedule -
-achieved with something like =(rest (periodic-seq (t/now) (t/minutes
+The solution to this is to exclude =(Instant/now)= from the schedule -
+achieved with something like =(rest (periodic-seq (ZonedDateTime/now) (Duration/ofMinutes
 5)))=.
 
 ** Testing your integration with Chime
