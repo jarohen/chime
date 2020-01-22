@@ -19,25 +19,25 @@
   []
   (Instant/now *clock*))
 
-(defprotocol ICoerce
+(defprotocol ->Instant
   (^Instant
-    to-date-time [obj] "Convert `obj` to an Instant instance."))
+    ->instant [obj] "Convert `obj` to an Instant instance."))
 
-(extend-protocol ICoerce
+(extend-protocol ->Instant
   ;; NOTE: Only implemented for the few types supported by Chime
   Date
-  (to-date-time [^Date date]
+  (->instant [^Date date]
     (.toInstant date))
 
   Instant
-  (to-date-time [inst] inst)
+  (->instant [inst] inst)
 
   Long
-  (to-date-time [epoch-msecs]
+  (->instant [epoch-msecs]
     (Instant/ofEpochMilli epoch-msecs))
 
   ZonedDateTime
-  (to-date-time [zdt]
+  (->instant [zdt]
     (.toInstant zdt)))
 
 (defn- before? [^Instant t1 ^Instant t2]
@@ -78,7 +78,7 @@
         times-fn (^:once fn* [] times)]
     (go-loop [now (now)
               times-seq (->> (times-fn)
-                             (map to-date-time)
+                             (map ->instant)
                              (drop-while #(before? % now)))]
       (if-let [[next-time & more-times] (seq times-seq)]
         (a/alt!
