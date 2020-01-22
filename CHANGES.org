@@ -1,71 +1,69 @@
 * Changes
+** 0.3.0-SNAPSHOT
+Chime was resurrected somewhat, due to Tick (temporarily) removing their schedule support.
+
+Breaking changes:
+- Chime now uses java.time by default (thanks to [[https://github.com/holyjak][Jakub Holy]] for the PR!).
+  You'll want to =(:require chime.joda-time)= to preserve backward compatibility
+- Chime no longer includes Joda time as a runtime dependency
+
 ** 0.2.2
-core.async bumped from 0.2.374 t0 0.3.442 to avoid spec problem (#21) - thanks
-to Dexter Gramfors ([[https://github.com/Dexterminator][Dexterminator]]) for the PR
+core.async bumped from 0.2.374 t0 0.3.442 to avoid spec problem (#21) - thanks to
+[[https://github.com/Dexterminator][Dexter Gramfors]] for the PR
 
 ** 0.2.1
-Chime correctly handles empty time seqs - thanks to Alex ter Weele ([[https://github.com/aterweele][aterweele]])
-for the report.
+Chime correctly handles empty time seqs - thanks to [[https://github.com/aterweele][Alex ter Weele]] for the report.
 
 ** 0.2.0
 
-Breaking change/functionality clarification: previously, if a job was scheduled
-before the timer was cancelled, the job would still run. After 0.2.0, jobs that
-haven't started before the timer is cancelled will not run.
+Breaking change/functionality clarification: previously, if a job was scheduled before the timer was cancelled, the job
+would still run. After 0.2.0, jobs that haven't started before the timer is cancelled will not run.
 
-Thanks to Dave Harlan ([[https://github.com/dkharlan][dkharlen]]) for raising the issue!
+Thanks to [[https://github.com/dkharlan][Dave Harlan]] for raising the issue!
 
 ** 0.1.8 / 0.1.9
 
-Bugfix to work around http://dev.clojure.org/jira/browse/ASYNC-138
-(work around in http://dev.clojure.org/jira/browse/ASYNC-32). Thanks
-to [[https://github.com/bronsa][Nicola Mometto]] and [[https://github.com/schmfr][@schmfr]] for helping to track it down!
+Bugfix to work around http://dev.clojure.org/jira/browse/ASYNC-138 (work around in
+http://dev.clojure.org/jira/browse/ASYNC-32). Thanks to [[https://github.com/bronsa][Nicola Mometto]] and
+[[https://github.com/schmfr][@schmfr]] for helping to track it down!
 
-Deps bump to Clojure 1.7, core.async 0.2.374, and clj-time 0.11 -
-thanks [[https://github.com/scribahti][@scribahti]].
+Deps bump to Clojure 1.7, core.async 0.2.374, and clj-time 0.11 - thanks [[https://github.com/scribahti][@scribahti]].
 
 Deploying 0.1.9 because Clojars part-failed on 0.1.8
 
 ** 0.1.7
 
-We delegate to the thread's uncaught exception handler by default, if
-~error-handler~ isn't provided.
+We delegate to the thread's uncaught exception handler by default, if ~error-handler~ isn't provided.
 
 Thanks [[https://github.com/cichli][Michael Griffiths]] :)
 
 ** 0.1.6
 
-PR from [[https://github.com/BartAdv][Bartosz]] to add an =on-finished= callback to =chime-at= -
-thanks!
+PR from [[https://github.com/BartAdv][Bartosz]] to add an =on-finished= callback to =chime-at= - thanks!
 
 ** 0.1.5
 
-Bugfix from Nick Rothwell ([[https://github.com/cassiel][cassiel]]) fixing a negative interval bug -
-thanks!
+Bugfix from [[https://github.com/cassiel][Nick Rothwell]] fixing a negative interval bug - thanks!
 
-Also, allowing you to close the channel returned by =chime-ch= to
-cancel the schedule.
+Also, allowing you to close the channel returned by =chime-ch= to cancel the schedule.
 
 No breaking changes
 
 ** 0.1.4
 
-Bugfix from Philipp Rockel ([[https://github.com/rockolo][rockolo]]) fixing a negative interval race
-condition - thanks!
+Bugfix from [[https://github.com/rockolo][Philipp Rockel]] fixing a negative interval race condition - thanks!
 
 No breaking changes
 
 ** 0.1.3
 
-Added =chime-ch=, returning a channel. Re-implemented =chime-at= in
-terms of =chime-at=.
+Added =chime-ch=, returning a channel. Re-implemented =chime-at= in terms of =chime-at=.
 
 No breaking changes
 
 ** 0.1.2
 
-Bug-fix for race condition - I advise everyone on earlier 0.1.x
-versions to upgrade.
+Bug-fix for race condition - I advise everyone on earlier 0.1.x versions to upgrade.
 
 ** 0.1.1
 
