@@ -1,35 +1,48 @@
 (ns chime-test
   (:require
    [chime :refer :all]
-   [clj-time.coerce]
-   [clj-time.core :as t]
-   [clj-time.periodic :refer [periodic-seq]]
    [clojure.core.async :as a :refer [<! go-loop]]
-   [clojure.test :refer :all]))
+   [clojure.test :refer :all])
+  (:import (java.time Instant)
+           (java.time.temporal ChronoUnit)))
+
+(defn periodic-seq [^Instant start duration-or-period]
+    (iterate
+      #(.addTo duration-or-period ^Instant %)
+      start))
+
+(defn date->ms [d]
+  (.toEpochMilli d))
+
+(defn now
+  []
+  (Instant/now))
 
 (defn check-timeliness!
   "Checks whether the chimes actually happended at the time for they were scheduled."
   [proof]
   (doseq [[value taken-at] @proof
           :let [diff (->> [value taken-at]
-                          (map clj-time.coerce/to-long)
-                          (apply -)
+                          (map date->ms)
+                          ^long (apply -)
                           (Math/abs))]]
-    (is (< diff 10))))
+    (is (< diff 20) (str "Expected to run at ±" value " but run at "
+                          taken-at ", i.e. diff of "
+                          diff "ms"))))
 
 (deftest all
 
   (testing "chime-at"
-    (let [will-be-omitted (-> 2 t/seconds t/ago)
-          t1 (-> 2 t/seconds t/from-now)
-          t2 (-> 3 t/seconds t/from-now)
+    (let [will-be-omitted (.minusSeconds (now) 2)
+          t1 (.plusSeconds (now) 2)
+          t2 (.plusSeconds (now) 3)
           proof (atom [])]
       (chime-at [will-be-omitted
                  t1
                  t2]
                 (fn [t]
                   (swap! proof conj [t
-                                     (t/now)])))
+                                     (chime-test/now)])))
       (while (not (= (list t1 t2)
                      (map first @proof))))
       (is (= [t1 t2]
@@ -37,25 +50,25 @@
       (check-timeliness! proof)))
 
   (testing "chime-ch"
-    (let [will-be-omitted (-> 2 t/seconds t/ago)
-          t1 (-> 2 t/seconds t/from-now)
-          t2 (-> 3 t/seconds t/from-now)
+    (let [will-be-omitted (.minusSeconds (now) 2)
+          t1 (.plusSeconds (now) 2)
+          t2 (.plusSeconds (now) 3)
           chimes (chime-ch [will-be-omitted
                             t1
                             t2])
           proof (atom [])]
       (a/<!! (go-loop []
                (when-let [msg (<! chimes)]
-                 (swap! proof conj [msg (t/now)])
+                 (swap! proof conj [msg (chime-test/now)])
                  (recur))))
       (is (= [t1 t2]
              (mapv first @proof)))
       (check-timeliness! proof)))
 
   (testing "channel closing"
-    (let [omitted (-> 2 t/seconds t/ago)
-          expected (-> 2 t/seconds t/from-now)
-          dropped (-> 3 t/seconds t/from-now)
+    (let [omitted (.minusSeconds (now) 2)
+          expected (.plusSeconds (now) 2)
+          dropped (.plusSeconds (now) 3)
           chimes (chime-ch [omitted expected dropped])
           proof (atom [])]
       (a/<!!
@@ -69,7 +82,7 @@
 
   (testing ":on-finished"
     (let [proof (atom false)]
-      (chime-at [(-> 2 t/seconds t/from-now) (-> 4 t/seconds t/from-now)]
+      (chime-at [(.plusSeconds (now) 2) (.plusSeconds (now) 4)]
 
                 (fn [time])
 
@@ -82,13 +95,13 @@
     ;; test case for 0.1.5 bugfix - thanks Nick!
 
     (let [proof (atom [])
-          ch (chime-ch (->> (periodic-seq (-> (-> (t/now) (t/plus (t/seconds 1)))
-                                              (.withMillisOfSecond 0))
-                                          (-> 1 t/seconds))
+          ch (chime-ch (->> (periodic-seq (-> (.plusSeconds (chime-test/now) 2)
+                                              (.truncatedTo (ChronoUnit/SECONDS)))
+                                          (java.time.Duration/ofSeconds 1))
                             (take 3)))]
 
       (swap! proof conj [(a/<!! ch)
-                         (t/now)])
+                         (chime-test/now)])
       (check-timeliness! proof)
       (a/<!! (a/timeout 4000))
       ;; Pending timestamps come through in the past.
@@ -101,8 +114,8 @@
                      ;; some overrunning task:
                      (swap! proof conj now)
                      (Thread/sleep 5000))
-          cancel-stuff! (chime-at (rest (periodic-seq (t/now)
-                                                      (t/seconds 1)))
+          cancel-stuff! (chime-at (rest (periodic-seq (chime-test/now)
+                                                      (java.time.Duration/ofSeconds 1)))
                                   do-stuff)]
       (Thread/sleep 3000)
       (cancel-stuff!)
@@ -111,7 +124,7 @@
 
   (testing "Empty or completely past sequences are acceptable"
     (let [proof (atom false)]
-      (chime-at (map #(-> % t/minutes t/ago) [5 4 3 2])
+      (chime-at (map #(.minusSeconds (now) (* 60 %)) [5 4 3 2])
                 identity
                 {:on-finished (fn []
                                 (reset! proof true))})
