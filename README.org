@@ -114,7 +114,8 @@ callback when the schedule has finished (if it's a finite schedule, of
 course!):
 
 #+BEGIN_SRC clojure
-  (chime-at [(.plusSeconds (java.time.Instant/now) 2) (.plusSeconds (java.time.Instant/now) 4)]
+  (chime-at [(.plusSeconds (java.time.Instant/now) 2) 
+             (.plusSeconds (java.time.Instant/now) 4)]
 
             (fn [time]
               (println "Chiming at" time))
