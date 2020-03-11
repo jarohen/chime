@@ -1,5 +1,5 @@
 * Changes
-** 0.3.0-SNAPSHOT
+** 0.3.0
 Chime was resurrected somewhat, due to Tick (temporarily) removing their schedule support.
 
 Breaking changes:

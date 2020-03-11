@@ -7,7 +7,7 @@ Chime is a *really* lightweight Clojure scheduler.
 Add the following to your =project.clj= file:
 
 #+BEGIN_SRC clojure
-  [jarohen/chime "0.2.2"]
+  [jarohen/chime "0.3.0"]
 
 #+END_SRC
 
@@ -38,9 +38,8 @@ Chime consists of two main function, =chime-ch= and =chime-at=.
 
 *** =chime-ch=
 
-=chime-ch= is called with an ordered sequence of
-[[https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html][instants]], and
-returns a channel that sends an event at each time in the sequence.
+=chime-ch= is called with an ordered sequence of [[https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html][instants]], and returns a channel that sends an event at each time in the
+sequence.
 
 #+BEGIN_SRC clojure
   (:require [chime :refer [chime-ch]]
