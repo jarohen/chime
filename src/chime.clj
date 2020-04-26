@@ -37,7 +37,7 @@
   (chime-async/chime-ch (-> times chime/without-past-times)
                         {:ch ch}))
 
-(defn chime-at
+(defn ^:deprecated chime-at
   "Deprecated: use `chime.core/chime-at` instead - see the source of this fn for a migration.
 
   Calls `f` with the current time at every time in the `times` list."
@@ -47,6 +47,20 @@
   (defonce chime-at-deprecated-warning
     (log/warn "`chime/chime-at` has moved to chime.core/chime-at. see source of `chime/chime-at` for the migration"))
 
-  (let [sched (chime/chime-at (->> times (chime/without-past-times)) f opts)]
+  (let [sched (chime/chime-at (->> times (chime/without-past-times))
+                              f
+                              (assoc opts
+                                :error-handler (fn [e]
+                                                 (if error-handler
+                                                   (try
+                                                     (prn "yo!")
+                                                     (error-handler e)
+                                                     (prn "returning true")
+                                                     true
+                                                     (catch Exception e
+                                                       false))
+                                                   (do
+                                                     (log/warn e "Error running Chime schedule")
+                                                     (not (instance? InterruptedException e)))))))]
     (fn close []
       (.close ^AutoCloseable sched))))

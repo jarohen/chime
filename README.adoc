@@ -164,9 +164,8 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
 === Error handling
 
 You can pass an error-handler to `chime-at` - a function that takes the exception as an argument.
-You can either re-throw it, to prevent future occurrences of the scheduled task; or squash it to try again at the next scheduled time.
-
-By default, Chime will re-throw the error to the thread's uncaught exception handler.
+Return truthy from this function to continue the schedule, falsy to cancel it.
+By default, Chime will log the error and continue the schedule.
 
 [source,clojure]
 ----

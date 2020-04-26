@@ -31,9 +31,7 @@
         t1 (.plusSeconds (now) 2)
         t2 (.plusSeconds (now) 3)
         proof (atom [])]
-    (chime-at [will-be-omitted
-               t1
-               t2]
+    (chime-at [will-be-omitted t1 t2]
               (fn [t]
                 (swap! proof conj [t
                                    (chime-test/now)])))
@@ -42,6 +40,37 @@
     (is (= [t1 t2]
            (mapv first @proof)))
     (check-timeliness! proof)))
+
+(deftest test-error-handler
+  (testing "continues the schedule"
+    (let [proof (atom [])
+          !latch (promise)
+          sched (chime-at [(.plusMillis (Instant/now) 500)
+                           (.plusMillis (Instant/now) 1000)]
+                          (fn [time]
+                            (throw (ex-info "boom!" {:time time})))
+                          {:error-handler (fn [e]
+                                            (swap! proof conj e)
+                                            nil)
+                           :on-finished (fn [] (deliver !latch nil))})]
+      (is (not= ::timeout (deref !latch 1500 ::timeout)))
+      (is (= 2 (count @proof)))
+      (is (every? ex-data @proof))))
+
+  (testing "rethrowing the error stops the schedule"
+    (let [proof (atom [])
+          !latch (promise)
+          sched (chime-at [(.plusMillis (Instant/now) 500)
+                           (.plusMillis (Instant/now) 1000)]
+                          (fn [time]
+                            (throw (ex-info "boom!" {:time time})))
+                          {:error-handler (fn [e]
+                                            (swap! proof conj e)
+                                            (throw e))
+                           :on-finished (fn [] (deliver !latch nil))})]
+      (is (not= ::timeout (deref !latch 1500 ::timeout)))
+      (is (= 1 (count @proof)))
+      (is (every? ex-data @proof)))))
 
 (deftest test-chime-ch
   (let [will-be-omitted (.minusSeconds (now) 2)

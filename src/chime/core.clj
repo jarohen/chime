@@ -6,7 +6,7 @@
            (java.time.temporal ChronoUnit TemporalAmount)
            (java.util Date)
            (java.util.concurrent Executors ScheduledExecutorService ThreadFactory TimeUnit)
-           (java.lang AutoCloseable)))
+           (java.lang AutoCloseable Thread$UncaughtExceptionHandler)))
 
 ;; --------------------------------------------------------------------- time helpers
 
@@ -48,12 +48,37 @@
           (.setName (format "chime-" (swap! !count inc))))))))
 
 (defn chime-at
-  "Calls `f` with the current time at every time in the `times` list."
+  "Calls `f` with the current time at every time in the `times` sequence.
+
+  ```
+  (:require [chime.core :as chime])
+  (:import [java.time Instant])
+
+  (let [now (Instant/now)]
+    (chime/chime-at [(.plusSeconds now 2)
+                     (.plusSeconds now 4)]
+                    (fn [time]
+                      (println \"Chiming at\" time)))
+  ```
+
+  Returns an AutoCloseable that you can `.close` to stop the schedule.
+  You can also deref the return value to wait for the schedule to finish.
+
+  When the schedule is either cancelled or finished, will call the `on-finished` handler.
+
+  You can pass an error-handler to `chime-at` - a function that takes the exception as an argument.
+  Return truthy from this function to continue the schedule, falsy to cancel it.
+  By default, Chime will log the error and continue the schedule.
+  "
   (^java.lang.AutoCloseable [times f] (chime-at times f {}))
 
   (^java.lang.AutoCloseable [times f {:keys [error-handler on-finished]}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
-         !latch (promise)]
+         !latch (promise)
+         error-handler (or error-handler
+                           (fn [e]
+                             (log/warn e "Error running scheduled fn")
+                             (not (instance? InterruptedException e))))]
      (letfn [(close []
                (.shutdownNow pool)
                (deliver !latch nil)
@@ -61,27 +86,22 @@
                  (on-finished)))
 
              (schedule-loop [[time & times]]
-               (if time
-                 (.schedule pool
-                            ^Runnable
-                            (fn []
-                              (if (try
-                                    (f time)
-                                    true
-                                    (catch Exception e
-                                      (if error-handler
-                                        (error-handler e)
-                                        (log/warn e "Error running scheduled fn"))
+               (letfn [(task []
+                         (if (try
+                               (f time)
+                               true
+                               (catch Exception e
+                                 (try
+                                   (error-handler e)
+                                   (catch Exception e
+                                     (log/error e "error calling chime error-handler, stopping schedule")))))
 
-                                      (not (instance? InterruptedException e))))
+                           (schedule-loop times)
+                           (close)))]
 
-                                (schedule-loop times)
-                                (close)))
-
-                            (.between ChronoUnit/MILLIS (now) time)
-                            TimeUnit/MILLISECONDS)
-
-                 (close)))]
+                 (if time
+                   (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now) time) TimeUnit/MILLISECONDS)
+                   (close))))]
 
        (schedule-loop (map ->instant times))
 

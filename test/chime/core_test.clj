@@ -47,16 +47,31 @@
     (t/is @proof)))
 
 (t/deftest test-error-handler
-  (let [proof (atom [])
-        sched (chime/chime-at [(.plusMillis (Instant/now) 500)
-                             (.plusMillis (Instant/now) 1000)]
-                            (fn [time]
-                              (throw (ex-info "boom!" {:time time})))
-                            {:error-handler (fn [e]
-                                              (swap! proof conj e))})]
-    (t/is (not= ::timeout (deref sched 1500 ::timeout)))
-    (t/is (= 2 (count @proof)))
-    (t/is (every? ex-data @proof))))
+  (t/testing "returning true continues the schedule"
+    (let [proof (atom [])
+          sched (chime/chime-at [(.plusMillis (Instant/now) 500)
+                                 (.plusMillis (Instant/now) 1000)]
+                                (fn [time]
+                                  (throw (ex-info "boom!" {:time time})))
+                                {:error-handler (fn [e]
+                                                  (swap! proof conj e)
+                                                  true)})]
+      (t/is (not= ::timeout (deref sched 1500 ::timeout)))
+      (t/is (= 2 (count @proof)))
+      (t/is (every? ex-data @proof))))
+
+  (t/testing "returning false stops the schedule"
+    (let [proof (atom [])
+          sched (chime/chime-at [(.plusMillis (Instant/now) 500)
+                                 (.plusMillis (Instant/now) 1000)]
+                                (fn [time]
+                                  (throw (ex-info "boom!" {:time time})))
+                                {:error-handler (fn [e]
+                                                  (swap! proof conj e)
+                                                  false)})]
+      (t/is (not= ::timeout (deref sched 1500 ::timeout)))
+      (t/is (= 1 (count @proof)))
+      (t/is (every? ex-data @proof)))))
 
 (t/deftest test-long-running-jobs
   (let [proof (atom [])
