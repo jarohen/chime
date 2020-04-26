@@ -1,0 +1,27 @@
+name: Chime CI
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: cache-deps
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-deps
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('project.clj') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: install-deps
+      run: lein deps
+    - name: run-tests
+      run: lein test
