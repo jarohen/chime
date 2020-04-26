@@ -1,57 +1,14 @@
-(ns chime
-  "Lightweight scheduling library."
-  (:require
-    [clojure.core.async :as a :refer [<! >! go-loop]]
-    [clojure.core.async.impl.protocols :as p])
-  (:import (java.time ZonedDateTime Instant)
-           (java.time.temporal ChronoUnit)
-           (java.util Date)))
+(ns ^:deprecated chime
+  (:require [chime.core :as chime]
+            [chime.core-async :as chime-async]
+            [clojure.core.async :as a]
+            [clojure.tools.logging :as log])
+  (:import java.lang.AutoCloseable))
 
-;; --------------------------------------------------------------------- time helpers
+(defn ^:deprecated chime-ch
+  "Deprecated: use `chime.core-async/chime-ch` - see the source of this fn for a migration.
 
-(def ^:dynamic *clock*
-  "The clock used to determine 'now'; you can override it with `binding` for
-  testing purposes."
-  (java.time.Clock/systemUTC))
-
-(defn- now
-  "Returns a date time for the current instant"
-  []
-  (Instant/now *clock*))
-
-(defprotocol ->Instant
-  (^Instant
-    ->instant [obj] "Convert `obj` to an Instant instance."))
-
-(extend-protocol ->Instant
-  ;; NOTE: Only implemented for the few types supported by Chime
-  Date
-  (->instant [^Date date]
-    (.toInstant date))
-
-  Instant
-  (->instant [inst] inst)
-
-  Long
-  (->instant [epoch-msecs]
-    (Instant/ofEpochMilli epoch-msecs))
-
-  ZonedDateTime
-  (->instant [zdt]
-    (.toInstant zdt)))
-
-(defn- before? [^Instant t1 ^Instant t2]
-  (.isBefore t1 t2))
-
-;; ---------------------------------------------------------------------
-
-(defn- ms-between [^Instant start ^Instant end]
-  (if (before? end start)
-    0
-    (.between ChronoUnit/MILLIS start end)))
-
-(defn chime-ch
-  "Returns a core.async channel that 'chimes' at every time in the
+  Returns a core.async channel that 'chimes' at every time in the
   times list. Times that have already passed are ignored.
 
   Arguments:
@@ -74,55 +31,36 @@
   There are extensive usage examples in the README"
   [times & [{:keys [ch] :or {ch (a/chan)}}]]
 
-  (let [cancel-ch (a/chan)
-        times-fn (^:once fn* [] times)]
-    (go-loop [now (now)
-              times-seq (->> (times-fn)
-                             (map ->instant)
-                             (drop-while #(before? % now)))]
-      (if-let [[next-time & more-times] (seq times-seq)]
-        (a/alt!
-          cancel-ch (a/close! ch)
+  (defonce chime-ch-deprecated-warning
+    (log/warn "`chime/chime-ch` has moved to chime.core-async/chime-ch. see source of `chime/chime-ch` for the migration"))
 
-          (a/timeout (ms-between now next-time)) (do
-                                                   (>! ch next-time)
+  (chime-async/chime-ch (-> times chime/without-past-times)
+                        {:ch ch}))
 
-                                                   (recur (chime/now) more-times))
+(defn ^:deprecated chime-at
+  "Deprecated: use `chime.core/chime-at` instead - see the source of this fn for a migration.
 
-          :priority true)
-
-        (a/close! ch)))
-
-    (reify
-      p/ReadPort
-      (take! [_ handler]
-        (p/take! ch handler))
-
-      p/Channel
-      (close! [_] (p/close! cancel-ch))
-      (closed? [_] (p/closed? cancel-ch)))))
-
-(defn chime-at
-  "Calls `f` with the current time at every time in the `times` list."
+  Calls `f` with the current time at every time in the `times` list."
   [times f & [{:keys [error-handler on-finished]
-               :or {on-finished #()}}]]
-  (let [ch (chime-ch times)
-        !cancelled? (atom false)]
-    (go-loop []
-      (if-let [time (<! ch)]
-        (do
-          (<! (a/thread
-                (try
-                  (when-not @!cancelled?
-                    (f time))
-                  (catch Exception e
-                    (if error-handler
-                      (error-handler e)
-                      (throw e))))))
-          (recur))
+               :or {on-finished #()}
+               :as opts}]]
+  (defonce chime-at-deprecated-warning
+    (log/warn "`chime/chime-at` has moved to chime.core/chime-at. see source of `chime/chime-at` for the migration"))
 
-        (on-finished)))
-
-    (fn cancel! []
-      (a/close! ch)
-      (reset! !cancelled? true))))
+  (let [sched (chime/chime-at (->> times (chime/without-past-times))
+                              f
+                              (assoc opts
+                                :error-handler (fn [e]
+                                                 (if error-handler
+                                                   (try
+                                                     (prn "yo!")
+                                                     (error-handler e)
+                                                     (prn "returning true")
+                                                     true
+                                                     (catch Exception e
+                                                       false))
+                                                   (do
+                                                     (log/warn e "Error running Chime schedule")
+                                                     (not (instance? InterruptedException e)))))))]
+    (fn close []
+      (.close ^AutoCloseable sched))))
