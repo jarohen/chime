@@ -1,4 +1,20 @@
 * Changes
+** 0.3.1
+Have finally gotten around to spending some non-trivial time modernising Chime, thanks for your patience :)
+
+This is a backwards compatible release - the original =chime= namespace still behaves 100% as before.
+
+The plan now is to move to a 1.0.0 release imminently (in line with the rest of the Clojure community, apparently!) in which I'll remove this layer - so feel free to use this release to migrate over.
+
+Changes:
+- Main chime namespace is now =chime.core=, rather than the =chime= top-level namespace
+- core.async is no longer a required dependency - =chime-ch= is in =chime.core-async/chime-ch=
+- =chime-at= now returns an =AutoCloseable= rather than a close function - call =.close= to stop the schedule.
+- Chime no longer removes past times for you - this was causing counter-intuitive issues.
+  I've added =chime.core/without-past-times= if you want to restore this behaviour.
+- Error handling has changed slightly - you now need to return truthy to continue the schedule, falsy to stop it.
+
+Just to confirm, these changes only apply to =chime.core= / =chime.core-async= - the behaviour of the =chime= namespace hasn't changed.
 ** 0.3.0
 Chime was resurrected somewhat, due to Tick (temporarily) removing their schedule support.
 
