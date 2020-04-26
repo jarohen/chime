@@ -1,4 +1,7 @@
 * Changes
+** 0.3.2
+I left in some println debugging. Apologies.
+
 ** 0.3.1
 Have finally gotten around to spending some non-trivial time modernising Chime, thanks for your patience :)
 

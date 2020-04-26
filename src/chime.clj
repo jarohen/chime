@@ -53,9 +53,7 @@
                                 :error-handler (fn [e]
                                                  (if error-handler
                                                    (try
-                                                     (prn "yo!")
                                                      (error-handler e)
-                                                     (prn "returning true")
                                                      true
                                                      (catch Exception e
                                                        false))
