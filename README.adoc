@@ -39,10 +39,11 @@ Chime consists of one main function, `chime.core/chime-at`.
 (:require [chime.core :as chime])
 (:import [java.time Instant])
 
-(chime/chime-at [(.plusSeconds (Instant/now) 2)
-                 (.plusSeconds (Instant/now) 4)]
-                (fn [time]
-                  (println "Chiming at" time)))
+(let [now (Instant/now)]
+  (chime/chime-at [(.plusSeconds now 2)
+                   (.plusSeconds now 4)]
+                  (fn [time]
+                    (println "Chiming at" time))))
 ----
 
 With `chime-at`, it is the caller's responsibility to handle over-running jobs.
@@ -55,14 +56,15 @@ You can also pass an `on-finished` parameter to `chime-at` to run a callback whe
 
 [source,clojure]
 ----
-(chime/chime-at [(.plusSeconds (java.time.Instant/now) 2)
-                 (.plusSeconds (java.time.Instant/now) 4)]
+(let [now (Instant/now)]
+  (chime/chime-at [(.plusSeconds now 2)
+                   (.plusSeconds now 4)]
 
-                (fn [time]
-                  (println "Chiming at" time))
+                  (fn [time]
+                    (println "Chiming at" time))
 
-                {:on-finished (fn []
-                                (println "Schedule finished."))})
+                  {:on-finished (fn []
+                                  (println "Schedule finished."))}))
 ----
 
 === Recurring schedules
@@ -185,8 +187,9 @@ If you already have Clojure's core.async in your project, you may prefer `chime.
 (:require [chime.core-async :refer [chime-ch]]
           [clojure.core.async :as a :refer [<! go-loop]])
 
-(let [chimes (chime-ch [(.plusSeconds (Instant/now) 2)
-                        (.plusSeconds (Instant/now) 3)])]
+(let [now (Instant/now)
+      chimes (chime-ch [(.plusSeconds now 2)
+                        (.plusSeconds now 3)])]
   (a/<!! (go-loop []
            (when-let [msg (<! chimes)]
              (prn "Chiming at:" msg)
