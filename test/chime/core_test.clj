@@ -37,6 +37,20 @@
 
       (t/is @proof))))
 
+(t/deftest test-remaining-chimes
+  (let [times [(.plusMillis (Instant/now) 500)
+               (.plusMillis (Instant/now) 1000)]
+        !proof (atom nil)
+        !latch (promise)
+        sched (chime/chime-at times
+                              (fn [time]
+                                (deliver !latch time)))]
+    (t/is (= times (chime/remaining-chimes sched)))
+    @!latch
+    (t/is (= (drop 1 times) (chime/remaining-chimes sched)))
+    @sched
+    (t/is (empty? (chime/remaining-chimes sched)))))
+
 (t/deftest test-on-finished
   (let [proof (atom false)]
     (chime/chime-at [(.plusMillis (Instant/now) 500) (.plusMillis (Instant/now) 1000)]

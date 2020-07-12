@@ -47,6 +47,9 @@
         (doto (Thread. r)
           (.setName (format "chime-" (swap! !count inc))))))))
 
+(defprotocol ChimeSchedule
+  (remaining-chimes [chime-schedule]))
+
 (defn chime-at
   "Calls `f` with the current time at every time in the `times` sequence.
 
@@ -84,36 +87,42 @@
                                  (let [interrupted? (instance? InterruptedException e)]
                                    (when-not interrupted?
                                      (log/warn e "Error running scheduled fn"))
-                                   (not interrupted?))))]
+                                   (not interrupted?))))
+         !times (atom (map ->instant times))]
      (letfn [(close []
                (.shutdownNow pool)
                (deliver !latch nil)
                (when on-finished
                  (on-finished)))
 
-             (schedule-loop [[time & times]]
-               (letfn [(task []
-                         (if (try
-                               (f time)
-                               true
-                               (catch Exception e
-                                 (try
-                                   (exception-handler e)
-                                   (catch Throwable e
-                                     (log/error e "Error calling Chime exception-handler, stopping schedule"))))
-                               (catch Throwable t
-                                 (log/error t (str (class t) " thrown, stopping schedule"))))
+             (schedule-loop []
+               (let [time (first @!times)]
+                 (letfn [(task []
+                           (if (try
+                                 (swap! !times rest)
+                                 (f time)
+                                 true
+                                 (catch Exception e
+                                   (try
+                                     (exception-handler e)
+                                     (catch Throwable e
+                                       (log/error e "Error calling Chime exception-handler, stopping schedule"))))
+                                 (catch Throwable t
+                                   (log/error t (str (class t) " thrown, stopping schedule"))))
 
-                           (schedule-loop times)
-                           (close)))]
+                             (schedule-loop)
+                             (close)))]
 
-                 (if time
-                   (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now) time) TimeUnit/MILLISECONDS)
-                   (close))))]
+                   (if time
+                     (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now) time) TimeUnit/MILLISECONDS)
+                     (close)))))]
 
-       (schedule-loop (map ->instant times))
+       (schedule-loop)
 
        (reify
+         ChimeSchedule
+         (remaining-chimes [_] @!times)
+
          AutoCloseable
          (close [_] (close))
 
