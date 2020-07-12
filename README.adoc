@@ -161,20 +161,22 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
      (map #(nth % 2))))
 ----
 
-=== Error handling
+=== Exception handling
 
-You can pass an error-handler to `chime-at` - a function that takes the exception as an argument.
+You can pass an exception-handler to `chime-at` - a function that takes the `Exception` as an argument.
 Return truthy from this function to continue the schedule, falsy to cancel it.
-By default, Chime will log the error and continue the schedule.
+By default, Chime will log the exception and continue the schedule.
 
 [source,clojure]
 ----
 (chime-at [times...]
           do-task-fn
-          {:error-handler (fn [e]
-                            ;; log, alert, notify etc?
-                            )})
+          {:exception-handler (fn [e]
+                                ;; log, alert, notify etc?
+                                )})
 ----
+
+If the schedule function throws anything that isn't an `Exception`, the schedule terminates.
 
 === `core.async`
 If you already have Clojure's core.async in your project, you may prefer `chime.core-async/chime-ch`

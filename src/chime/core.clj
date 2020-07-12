@@ -66,19 +66,25 @@
 
   When the schedule is either cancelled or finished, will call the `on-finished` handler.
 
-  You can pass an error-handler to `chime-at` - a function that takes the exception as an argument.
+  You can pass an exception-handler to `chime-at` - a function that takes the exception as an argument.
   Return truthy from this function to continue the schedule, falsy to cancel it.
-  By default, Chime will log the error and continue the schedule.
+  By default, Chime will log the exception and continue the schedule.
   "
   (^java.lang.AutoCloseable [times f] (chime-at times f {}))
 
-  (^java.lang.AutoCloseable [times f {:keys [error-handler on-finished]}]
+  (^java.lang.AutoCloseable [times f {:keys [exception-handler on-finished] :as opts}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
          !latch (promise)
-         error-handler (or error-handler
-                           (fn [e]
-                             (log/warn e "Error running scheduled fn")
-                             (not (instance? InterruptedException e))))]
+         exception-handler (or exception-handler
+                               (when-let [error-handler (:error-handler opts)]
+                                 (defonce __error-handler-warn
+                                   (log/warn "`:error-handler` is deprecated - rename to `:exception-handler`"))
+                                 error-handler)
+                               (fn [e]
+                                 (let [interrupted? (instance? InterruptedException e)]
+                                   (when-not interrupted?
+                                     (log/warn e "Error running scheduled fn"))
+                                   (not interrupted?))))]
      (letfn [(close []
                (.shutdownNow pool)
                (deliver !latch nil)
@@ -92,9 +98,11 @@
                                true
                                (catch Exception e
                                  (try
-                                   (error-handler e)
-                                   (catch Exception e
-                                     (log/error e "error calling chime error-handler, stopping schedule")))))
+                                   (exception-handler e)
+                                   (catch Throwable e
+                                     (log/error e "Error calling Chime exception-handler, stopping schedule"))))
+                               (catch Throwable t
+                                 (log/error t (str (class t) " thrown, stopping schedule"))))
 
                            (schedule-loop times)
                            (close)))]

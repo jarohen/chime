@@ -46,16 +46,16 @@
     (Thread/sleep 1200)
     (t/is @proof)))
 
-(t/deftest test-error-handler
+(t/deftest test-exception-handler
   (t/testing "returning true continues the schedule"
     (let [proof (atom [])
           sched (chime/chime-at [(.plusMillis (Instant/now) 500)
                                  (.plusMillis (Instant/now) 1000)]
                                 (fn [time]
                                   (throw (ex-info "boom!" {:time time})))
-                                {:error-handler (fn [e]
-                                                  (swap! proof conj e)
-                                                  true)})]
+                                {:exception-handler (fn [e]
+                                                      (swap! proof conj e)
+                                                      true)})]
       (t/is (not= ::timeout (deref sched 1500 ::timeout)))
       (t/is (= 2 (count @proof)))
       (t/is (every? ex-data @proof))))
@@ -66,12 +66,33 @@
                                  (.plusMillis (Instant/now) 1000)]
                                 (fn [time]
                                   (throw (ex-info "boom!" {:time time})))
-                                {:error-handler (fn [e]
-                                                  (swap! proof conj e)
-                                                  false)})]
+                                {:exception-handler (fn [e]
+                                                      (swap! proof conj e)
+                                                      false)})]
       (t/is (not= ::timeout (deref sched 1500 ::timeout)))
       (t/is (= 1 (count @proof)))
-      (t/is (every? ex-data @proof)))))
+      (t/is (every? ex-data @proof))))
+
+  (t/testing "no exception handler continues the schedule"
+    (let [proof (atom [])
+          sched (chime/chime-at [(.plusMillis (Instant/now) 500)
+                                 (.plusMillis (Instant/now) 1000)]
+                                (fn [time]
+                                  (swap! proof conj :run)
+                                  (throw (ex-info "boom!" {:time time}))))]
+      (t/is (not= ::timeout (deref sched 1500 ::timeout)))
+      (t/is (= [:run :run] @proof)))))
+
+(t/deftest test-throwing-error-cancels-schedule
+  (let [proof (atom [])
+        sched (chime/chime-at [(.plusMillis (Instant/now) 500)
+                               (.plusMillis (Instant/now) 1000)
+                               (.plusMillis (Instant/now) 1500)]
+                              (fn [time]
+                                (when (> (count (swap! proof conj :run)) 1)
+                                  (throw (Error. "test-error")))))]
+    (t/is (not= ::timeout (deref sched 1200 ::timeout)))
+    (t/is (= [:run :run] @proof))))
 
 (t/deftest test-long-running-jobs
   (let [proof (atom [])
@@ -99,8 +120,8 @@
                                       (fn [now]
                                         (swap! !proof conj now)
                                         (Thread/sleep 3000))
-                                      {:error-handler (fn [e]
-                                                        (reset! !error e))
+                                      {:exception-handler (fn [e]
+                                                            (reset! !error e))
                                        :on-finished (fn []
                                                       (deliver !latch nil))})]
       (Thread/sleep 2000))
