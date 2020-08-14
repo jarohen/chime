@@ -1,4 +1,8 @@
 * Changes
+** 0.3.3
+Changes:
+- The without-past-times didn't work with joda dates, even with chime.joda-date imported.
+
 ** 0.3.2
 I left in some println debugging. Apologies.
 

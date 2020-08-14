@@ -123,4 +123,4 @@
 
   ([times now]
    (->> times
-        (drop-while #(.isBefore ^Instant % (->instant now))))))
+        (drop-while #(.isBefore ^Instant (->instant %) now)))))
