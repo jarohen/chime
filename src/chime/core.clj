@@ -45,7 +45,7 @@
     (reify ThreadFactory
       (newThread [_ r]
         (doto (Thread. r)
-          (.setName (format "chime-" (swap! !count inc))))))))
+          (.setName (format "chime-%d" (swap! !count inc))))))))
 
 (defn chime-at
   "Calls `f` with the current time at every time in the `times` sequence.
