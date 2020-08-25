@@ -1,7 +1,7 @@
 (ns chime.core
   "Lightweight scheduling library."
   (:require [clojure.tools.logging :as log])
-  (:import (clojure.lang IDeref IBlockingDeref)
+  (:import (clojure.lang IDeref IBlockingDeref IPending)
            (java.time ZonedDateTime Instant)
            (java.time.temporal ChronoUnit TemporalAmount)
            (java.util Date)
@@ -113,7 +113,10 @@
          (deref [_] (deref !latch))
 
          IBlockingDeref
-         (deref [_ ms timeout-val] (deref !latch ms timeout-val)))))))
+         (deref [_ ms timeout-val] (deref !latch ms timeout-val))
+
+         IPending
+         (isRealized [_] (realized? !latch)))))))
 
 (defn periodic-seq [^Instant start ^TemporalAmount duration-or-period]
   (iterate #(.addTo duration-or-period ^Instant %) start))
