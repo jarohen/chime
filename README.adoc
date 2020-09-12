@@ -36,8 +36,8 @@ Chime consists of one main function, `chime.core/chime-at`.
 
 [source,clojure]
 ----
-(:require [chime.core :as chime])
-(:import [java.time Instant])
+(require '[chime.core :as chime])
+(import '[java.time Instant])
 
 (let [now (Instant/now)]
   (chime/chime-at [(.plusSeconds now 2)
@@ -74,7 +74,7 @@ This example runs every 5 minutes from now:
 
 [source,clojure]
 ----
-(:import [java.time Instant Duration])
+(import '[java.time Instant Duration])
 
 (-> (chime/periodic-seq (Instant/now) (Duration/ofMinutes 5))
     rest) ; excludes *right now*
@@ -86,12 +86,12 @@ To generate the sequence of times, you'll need to seed the call to `periodic-seq
 
 [source,clojure]
 ----
-(:import [java.time LocalTime ZonedDateTime ZoneId Period])
+(import '[java.time LocalTime ZonedDateTime ZoneId Period])
 
 (chime/periodic-seq (-> (LocalTime/of 20 0 0)
                         (.adjustInto (ZonedDateTime/now (ZoneId/of "America/New_York")))
                         .toInstant)
-                    (Period/ofDays period-days))
+                    (Period/ofDays 1))
 ----
 
 === Complex schedules
@@ -102,13 +102,13 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
 
 [source,clojure]
 ----
-(:import [java.time ZonedDateTime ZoneId Period LocalTime DayOfWeek])
+(import '[java.time ZonedDateTime ZoneId Period LocalTime DayOfWeek])
 
 ;; Every Tuesday and Friday:
 (->> (chime/periodic-seq (-> (.adjustInto (LocalTime/of 0 0)
                                           (ZonedDateTime/now (ZoneId/of "America/New_York")))
                              .toInstant)
-                         (Period/ofDays period-days))
+                         (Period/ofDays 1))
 
      (filter (comp #{DayOfWeek/TUESDAY DayOfWeek/FRIDAY}
                    #(.getDayOfWeek %))))
@@ -146,7 +146,7 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
                                           (-> (ZonedDateTime/now (ZoneId/of "America/New_York"))
                                               (.withDayOfMonth 1)))
                              .toInstant)
-                         (Period/ofDays period-days))
+                         (Period/ofDays 1))
 
      (filter (comp #{DayOfWeek/FRIDAY}
                    #(.getDayOfWeek %)))
@@ -183,8 +183,8 @@ If you already have Clojure's core.async in your project, you may prefer `chime.
 
 [source,clojure]
 ----
-(:require [chime.core-async :refer [chime-ch]]
-          [clojure.core.async :as a :refer [<! go-loop]])
+(require '[chime.core-async :refer [chime-ch]]
+         '[clojure.core.async :as a :refer [<! go-loop]])
 
 (let [now (Instant/now)
       chimes (chime-ch [(.plusSeconds now 2)
@@ -209,8 +209,8 @@ In these examples, imagining an hourly schedule, let's say the 3pm run finishes 
 
 [source,clojure]
 ----
-(:require [chime.core-async :refer [chime-ch]]
-          [clojure.core.async :as a :refer [<! go-loop]])
+(require '[chime.core-async :refer [chime-ch]]
+         '[clojure.core.async :as a :refer [<! go-loop]])
 
 (let [chimes (chime-ch times {:ch (a/chan (a/sliding-buffer 1))})]
   (go-loop []
