@@ -109,3 +109,14 @@
 
     (t/is (= 1 (count @!proof)))
     (t/is (instance? InterruptedException @!error))))
+
+(t/deftest test-only-call-on-finished-once-36
+  (let [!count (atom 0)
+        now (Instant/now)]
+    (with-open [chiming (chime/chime-at [(.plusMillis now 500)
+                                         (.plusMillis now 500)]
+                                        (fn [time])
+                                        {:on-finished #(swap! !count inc)})]
+      (Thread/sleep 1000))
+
+    (t/is (= 1 @!count))))

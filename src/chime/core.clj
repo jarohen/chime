@@ -81,8 +81,7 @@
                              (not (instance? InterruptedException e))))]
      (letfn [(close []
                (.shutdownNow pool)
-               (deliver !latch nil)
-               (when on-finished
+               (when (and (deliver !latch nil) on-finished)
                  (on-finished)))
 
              (schedule-loop [[time & times]]
