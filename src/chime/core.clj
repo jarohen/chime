@@ -43,7 +43,7 @@
   (->instant [zdt]
     (.toInstant zdt)))
 
-(def ^:private thread-factory
+(def ^:private default-thread-factory
   (let [!count (atom 0)]
     (reify ThreadFactory
       (newThread [_ r]
@@ -67,6 +67,7 @@
   Returns an AutoCloseable that you can `.close` to stop the schedule.
   You can also deref the return value to wait for the schedule to finish.
 
+  Providing a custom `thread-factory` is supported, but optional (see `chime.core/default-thread-factory`).
   Providing a custom `clock` is supported, but optional (see `chime.core/utc-clock`).
 
   When the schedule is either cancelled or finished, will call the `on-finished` handler.
@@ -77,8 +78,9 @@
   "
   (^java.lang.AutoCloseable [times f] (chime-at times f {}))
 
-  (^java.lang.AutoCloseable [times f {:keys [error-handler on-finished clock]
-                                      :or {clock *clock*}}]
+  (^AutoCloseable [times f {:keys [error-handler on-finished thread-factory clock]
+                            :or {thread-factory default-thread-factory
+                                 clock *clock*}}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
          !latch (promise)
          error-handler (or error-handler
