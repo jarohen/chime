@@ -1,13 +1,10 @@
 (ns chime.joda-time
-  (:require [chime.core :as chime])
-  (:import [java.time Instant]))
+  (:require [chime.core :as chime]
+            [clj-time.core :as t])
+  (:import [java.time Instant]
+           [org.joda.time ReadableInstant]))
 
-(comment
-  ;; use this when dealing with `JodaTime`
-  (extend-protocol chime/->Instant
-    org.joda.time.ReadableInstant
-    (->instant [jt-instant]
-      (Instant/ofEpochMilli (.getMillis jt-instant))))
-
-  )
-
+(extend-protocol chime/->Instant
+  ReadableInstant
+  (->instant [jt-instant]
+    (Instant/ofEpochMilli (.getMillis jt-instant))))

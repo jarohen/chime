@@ -1,13 +1,12 @@
 (ns chime-test
   (:require
-   [chime :refer :all]
-   [clojure.core.async :as a :refer [<! go-loop]]
-   [clojure.test :refer :all]
-   [chime.core :as chime]
-   [chime.joda-time]
-   ;[clj-time.core :as t]
-   ;[clj-time.periodic]
-   )
+    [chime :refer :all]
+    [clojure.core.async :as a :refer [<! go-loop]]
+    [clojure.test :refer :all]
+    [chime.core :as chime]
+    [chime.joda-time]
+    [clj-time.core :as t]
+    [clj-time.periodic])
   (:import (java.time Instant)
            (java.time.temporal ChronoUnit)))
 
@@ -166,7 +165,7 @@
     (while (not @proof))
     (is @proof)))
 
-#_(deftest backwards-compatibility-without-past-times-test
+(deftest backwards-compatibility-without-past-times-test
   (let [times (-> (t/date-time 1990 1 1)
                   (t/from-time-zone (t/time-zone-for-offset -3))
                   (clj-time.periodic/periodic-seq (t/days 1))
