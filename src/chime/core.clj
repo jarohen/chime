@@ -1,10 +1,10 @@
 (ns chime.core
   "Lightweight scheduling library."
-  (:require [clojure.tools.logging :as log]
-            [chime.protocols :as proto])
+  (:require [clojure.tools.logging :as log])
   (:import (clojure.lang IDeref IBlockingDeref IPending)
-           (java.time Instant Clock)
+           (java.time ZonedDateTime Instant Clock)
            (java.time.temporal ChronoUnit TemporalAmount)
+           (java.util Date)
            (java.util.concurrent Executors ScheduledExecutorService ThreadFactory TimeUnit)
            (java.lang AutoCloseable Thread$UncaughtExceptionHandler)))
 
@@ -24,9 +24,29 @@
   (^Instant [^Clock clock]
    (Instant/now clock)))
 
+(defprotocol ->Instant
+  (->instant [obj]
+    "Convert `obj` to an Instant instance."))
+
+(extend-protocol ->Instant
+  Date
+  (->instant [^Date date]
+    (.toInstant date))
+
+  Instant
+  (->instant [inst] inst)
+
+  Long
+  (->instant [epoch-msecs]
+    (Instant/ofEpochMilli epoch-msecs))
+
+  ZonedDateTime
+  (->instant [zdt]
+    (.toInstant zdt)))
+
 (defn to-instant
   ^Instant [obj]
-  (proto/->instant obj))
+  (->instant obj))
 
 (def ^:private default-thread-factory
   (let [!count (atom 0)]
