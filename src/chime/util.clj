@@ -8,6 +8,6 @@
        [true false] left
        [true true] (let [[l & lmore] left
                          [r & rmore] right]
-                     (if (.isBefore l r)
+                     (if (.isBefore l r) ;; unavoidable reflection :(
                        (cons l (merge-schedules lmore right))
                        (cons r (merge-schedules left rmore)))))))

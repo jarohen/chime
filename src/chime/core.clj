@@ -2,26 +2,30 @@
   "Lightweight scheduling library."
   (:require [clojure.tools.logging :as log])
   (:import (clojure.lang IDeref IBlockingDeref IPending)
-           (java.time ZonedDateTime Instant)
+           (java.time ZonedDateTime Instant Clock)
            (java.time.temporal ChronoUnit TemporalAmount)
            (java.util Date)
            (java.util.concurrent Executors ScheduledExecutorService ThreadFactory TimeUnit)
            (java.lang AutoCloseable Thread$UncaughtExceptionHandler)))
 
 ;; --------------------------------------------------------------------- time helpers
+(defonce utc-clock (Clock/systemUTC))
 
 (def ^:dynamic *clock*
   "The clock used to determine 'now'; you can override it with `binding` for
   testing purposes."
-  (java.time.Clock/systemUTC))
+  utc-clock)
 
 (defn- now
-  "Returns a date time for the current instant"
-  ^java.time.Instant []
-  (Instant/now *clock*))
+  "Returns a date time for the current instant.
+   No-arg arity uses *clock*."
+  (^Instant []
+   (now *clock*))
+  (^Instant [^Clock clock]
+   (Instant/now clock)))
 
 (defprotocol ->Instant
-  (->instant ^java.time.Instant [obj]
+  (->instant ^Instant [obj]
     "Convert `obj` to an Instant instance."))
 
 (extend-protocol ->Instant
@@ -40,12 +44,16 @@
   (->instant [zdt]
     (.toInstant zdt)))
 
-(def ^:private thread-factory
+(def ^:private default-thread-factory
   (let [!count (atom 0)]
     (reify ThreadFactory
       (newThread [_ r]
         (doto (Thread. r)
           (.setName (format "chime-%d" (swap! !count inc))))))))
+
+(defn- default-error-handler [e]
+  (log/warn e "Error running scheduled fn")
+  (not (instance? InterruptedException e)))
 
 (defn chime-at
   "Calls `f` with the current time at every time in the `times` sequence.
@@ -64,21 +72,23 @@
   Returns an AutoCloseable that you can `.close` to stop the schedule.
   You can also deref the return value to wait for the schedule to finish.
 
+  Providing a custom `thread-factory` is supported, but optional (see `chime.core/default-thread-factory`).
+  Providing a custom `clock` is supported, but optional (see `chime.core/utc-clock`).
+
   When the schedule is either cancelled or finished, will call the `on-finished` handler.
 
   You can pass an error-handler to `chime-at` - a function that takes the exception as an argument.
   Return truthy from this function to continue the schedule, falsy to cancel it.
-  By default, Chime will log the error and continue the schedule.
-  "
-  (^java.lang.AutoCloseable [times f] (chime-at times f {}))
+  By default, Chime will log the error and continue the schedule (see `chime.core/default-error-handler`)."
 
-  (^java.lang.AutoCloseable [times f {:keys [error-handler on-finished]}]
+  (^AutoCloseable [times f] (chime-at times f nil))
+
+  (^AutoCloseable [times f {:keys [error-handler on-finished thread-factory clock]
+                            :or {error-handler  default-error-handler
+                                 thread-factory default-thread-factory ;; loom-friendly (i.e. virtual threads)
+                                 clock          utc-clock}}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
-         !latch (promise)
-         error-handler (or error-handler
-                           (fn [e]
-                             (log/warn e "Error running scheduled fn")
-                             (not (instance? InterruptedException e))))]
+         !latch (promise)]
      (letfn [(close []
                (.shutdownNow pool)
                (when (and (deliver !latch nil) on-finished)
@@ -99,7 +109,7 @@
                            (close)))]
 
                  (if time
-                   (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now) time) TimeUnit/MILLISECONDS)
+                   (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now clock) time) TimeUnit/MILLISECONDS)
                    (close))))]
 
        (schedule-loop (map ->instant times))
@@ -121,7 +131,7 @@
   (iterate #(.addTo duration-or-period ^Instant %) start))
 
 (defn without-past-times
-  ([times] (without-past-times times (Instant/now)))
+  ([times] (without-past-times times (now)))
 
   ([times now]
    (->> times
