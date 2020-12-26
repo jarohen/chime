@@ -1,4 +1,5 @@
-(ns chime.util)
+(ns chime.util
+  (:require [chime.core :as c]))
 
 (defn merge-schedules [left right]
   (lazy-seq
@@ -8,6 +9,6 @@
        [true false] left
        [true true] (let [[l & lmore] left
                          [r & rmore] right]
-                     (if (.isBefore l r) ;; unavoidable reflection :(
+                     (if (.isBefore (c/to-instant l) (c/to-instant r))
                        (cons l (merge-schedules lmore right))
                        (cons r (merge-schedules left rmore)))))))

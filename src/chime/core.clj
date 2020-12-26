@@ -1,10 +1,10 @@
 (ns chime.core
   "Lightweight scheduling library."
-  (:require [clojure.tools.logging :as log])
+  (:require [clojure.tools.logging :as log]
+            [chime.protocols :as proto])
   (:import (clojure.lang IDeref IBlockingDeref IPending)
-           (java.time ZonedDateTime Instant Clock)
+           (java.time Instant Clock)
            (java.time.temporal ChronoUnit TemporalAmount)
-           (java.util Date)
            (java.util.concurrent Executors ScheduledExecutorService ThreadFactory TimeUnit)
            (java.lang AutoCloseable Thread$UncaughtExceptionHandler)))
 
@@ -16,7 +16,7 @@
   testing purposes."
   utc-clock)
 
-(defn- now
+(defn now
   "Returns a date time for the current instant.
    No-arg arity uses *clock*."
   (^Instant []
@@ -24,25 +24,9 @@
   (^Instant [^Clock clock]
    (Instant/now clock)))
 
-(defprotocol ->Instant
-  (->instant ^Instant [obj]
-    "Convert `obj` to an Instant instance."))
-
-(extend-protocol ->Instant
-  Date
-  (->instant [^Date date]
-    (.toInstant date))
-
-  Instant
-  (->instant [inst] inst)
-
-  Long
-  (->instant [epoch-msecs]
-    (Instant/ofEpochMilli epoch-msecs))
-
-  ZonedDateTime
-  (->instant [zdt]
-    (.toInstant zdt)))
+(defn to-instant
+  ^Instant [obj]
+  (proto/->instant obj))
 
 (def ^:private default-thread-factory
   (let [!count (atom 0)]
@@ -112,7 +96,7 @@
                    (.schedule pool ^Runnable task (.between ChronoUnit/MILLIS (now clock) time) TimeUnit/MILLISECONDS)
                    (close))))]
 
-       (schedule-loop (map ->instant times))
+       (schedule-loop (map to-instant times))
 
        (reify
          AutoCloseable
@@ -134,5 +118,6 @@
   ([times] (without-past-times times (now)))
 
   ([times now]
-   (->> times
-        (drop-while #(.isBefore ^Instant (->instant %) now)))))
+   (let [now-inst (to-instant now)]
+     (->> times
+        (drop-while #(.isBefore (to-instant %) now-inst))))))
