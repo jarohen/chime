@@ -50,6 +50,10 @@
         (doto (Thread. r)
           (.setName (format "chime-%d" (swap! !count inc))))))))
 
+(defn- default-error-handler [e]
+  (log/warn e "Error running scheduled fn")
+  (not (instance? InterruptedException e)))
+
 (defn chime-at
   "Calls `f` with the current time at every time in the `times` sequence.
 
@@ -79,14 +83,11 @@
   (^java.lang.AutoCloseable [times f] (chime-at times f {}))
 
   (^AutoCloseable [times f {:keys [error-handler on-finished thread-factory clock]
-                            :or {thread-factory default-thread-factory
+                            :or {error-handler default-error-handler
+                                 thread-factory default-thread-factory
                                  clock *clock*}}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
-         !latch (promise)
-         error-handler (or error-handler
-                           (fn [e]
-                             (log/warn e "Error running scheduled fn")
-                             (not (instance? InterruptedException e))))]
+         !latch (promise)]
      (letfn [(close []
                (.shutdownNow pool)
                (when (and (deliver !latch nil) on-finished)
