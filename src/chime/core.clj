@@ -87,7 +87,8 @@
                                  thread-factory default-thread-factory
                                  clock *clock*}}]
    (let [pool (Executors/newSingleThreadScheduledExecutor thread-factory)
-         !latch (promise)]
+         !latch (promise)
+         f (bound-fn* f)]
      (letfn [(close []
                (.shutdownNow pool)
                (when (and (deliver !latch nil) on-finished)
