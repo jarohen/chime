@@ -1,12 +1,12 @@
 (ns chime-test
   (:require
-    [chime :refer :all]
-    [clojure.core.async :as a :refer [<! go-loop]]
-    [clojure.test :refer :all]
-    [chime.core :as chime]
-    [chime.joda-time]
-    [clj-time.core :as t]
-    [clj-time.periodic])
+   [chime :refer :all]
+   [clojure.core.async :as a :refer [<! go-loop]]
+   [clojure.test :refer :all]
+   [chime.core :as chime]
+   [chime.joda-time]
+   [clj-time.core :as t]
+   [clj-time.periodic])
   (:import (java.time Instant)
            (java.time.temporal ChronoUnit)))
 
