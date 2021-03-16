@@ -139,8 +139,7 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
 
 ;; Here we have to revert the start day to the first day of the month
 ;; so that when we split by month, we know which Friday is the third
-;; Friday. (Any times that have already passed will be dropped, as
-;; before)
+;; Friday.
 
 (->> (chime/periodic-seq (-> (.adjustInto (LocalTime/of 0 0)
                                           (-> (ZonedDateTime/now (ZoneId/of "America/New_York"))
@@ -158,7 +157,9 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
      (partition-by #(.getMonthValue %))
 
      ;; Only keep the third one in each month
-     (map #(nth % 2))))
+     (map #(nth % 2))
+
+     (chime/without-past-times)))
 ----
 
 === Error handling
