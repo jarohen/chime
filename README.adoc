@@ -105,21 +105,26 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
 (import '[java.time ZonedDateTime ZoneId Period LocalTime DayOfWeek])
 
 ;; Every Tuesday and Friday:
-(->> (chime/periodic-seq (-> (.adjustInto (LocalTime/of 0 0)
-                                          (ZonedDateTime/now (ZoneId/of "America/New_York")))
+(->> (chime/periodic-seq (-> (LocalTime/of 0 0)
+                             (.adjustInto (ZonedDateTime/now (ZoneId/of "America/New_York")))
                              .toInstant)
                          (Period/ofDays 1))
+
+     (map #(.atZone % (ZoneId/of "America/New_York")))
 
      (filter (comp #{DayOfWeek/TUESDAY DayOfWeek/FRIDAY}
                    #(.getDayOfWeek %))))
 
 ;; Week-days
 (->> (chime/periodic-seq ...)
+     (map #(.atZone % (ZoneId/of "America/New_York")))
      (remove (comp #{DayOfWeek/SATURDAY DayOfWeek/SUNDAY}
                    #(.getDayOfWeek %))))
 
 ;; Last Monday of the month:
 (->> (chime/periodic-seq ...)
+
+     (map #(.atZone % (ZoneId/of "America/New_York")))
 
      ;; Get all the Mondays
      (filter (comp #{DayOfWeek/MONDAY}
@@ -141,11 +146,13 @@ Instead, complex schedules can be expressed with liberal use of standard Clojure
 ;; so that when we split by month, we know which Friday is the third
 ;; Friday.
 
-(->> (chime/periodic-seq (-> (.adjustInto (LocalTime/of 0 0)
-                                          (-> (ZonedDateTime/now (ZoneId/of "America/New_York"))
+(->> (chime/periodic-seq (-> (LocalTime/of 0 0)
+                             (.adjustInto (-> (ZonedDateTime/now (ZoneId/of "America/New_York"))
                                               (.withDayOfMonth 1)))
                              .toInstant)
                          (Period/ofDays 1))
+
+     (map #(.atZone % (ZoneId/of "America/New_York")))
 
      (filter (comp #{DayOfWeek/FRIDAY}
                    #(.getDayOfWeek %)))
