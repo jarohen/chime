@@ -1,6 +1,12 @@
 * Changes
 ** 0.3.3
 Changes:
+- #43: Passing thread-bindings through to scheduled task
+- #41: Allow user to override the thread-factory used by Chime, makes Chime Loom-friendly (thanks @jimpil)
+- Allow specifying 'clock' to `chime-at` (thanks @jimpil)
+- #36: ensure we only call on-finished once (thanks @dazld)
+- #33: include thread-count in thread name (thanks @orestis and @pmonks)
+- #34: add `IPending` implementation to return value of `chime-at` (thanks @nukep)
 - The without-past-times didn't work with joda dates, even with chime.joda-date imported.
 
 ** 0.3.2

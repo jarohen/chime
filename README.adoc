@@ -8,12 +8,12 @@ Add the following to your `project.clj`/`deps.edn` file:
 
 [source,clojure]
 ----
-[jarohen/chime "0.3.2"]
+[jarohen/chime "0.3.3"]
 ----
 
 [source,clojure]
 ----
-{jarohen/chime {:mvn/version "0.3.2"}}
+{jarohen/chime {:mvn/version "0.3.3"}}
 ----
 
 == The ‘Big Idea’™ behind Chime
