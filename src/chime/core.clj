@@ -90,7 +90,7 @@
          !latch (promise)
          f (bound-fn* f)]
      (letfn [(close []
-               (.shutdownNow pool)
+               (.shutdown pool)
                (when (and (deliver !latch nil) on-finished)
                  (on-finished)))
 
@@ -116,7 +116,11 @@
 
        (reify
          AutoCloseable
-         (close [_] (close))
+         (close [_]
+           (.shutdownNow pool)
+           (or (.awaitTermination pool 1 TimeUnit/MINUTES)
+               (log/warn "Failed to terminate schedule pool after 1 minute."))
+           (close))
 
          IDeref
          (deref [_] (deref !latch))

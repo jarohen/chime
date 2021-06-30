@@ -42,6 +42,7 @@
     (chime/chime-at [(.plusMillis (Instant/now) 500) (.plusMillis (Instant/now) 1000)]
                   (fn [time])
                   {:on-finished (fn []
+                                  (Thread/sleep 100)
                                   (reset! proof true))})
     (Thread/sleep 1200)
     (t/is @proof)))
