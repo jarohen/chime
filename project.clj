@@ -1,4 +1,4 @@
-(defproject jarohen/chime "0.3.3"
+(defproject jarohen/chime "0.3.4-SNAPSHOT"
   :description "A really lightweight Clojure scheduler"
 
   :url "https://github.com/jarohen/chime"
