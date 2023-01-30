@@ -20,7 +20,7 @@
 
   Usage:
 
-    (let [chimes (chime-ch [(.plusSeconds (Instant/now) -2) ; has already passed, will be ignored.
+    (let [chimes (chime-ch [(.plusSeconds (Instant/now) -2)
                             (.plusSeconds (Instant/now) 2)
                             (.plusSeconds (Instant/now) 2)])]
       (a/<!! (go-loop []
