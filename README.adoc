@@ -94,6 +94,14 @@ To generate the sequence of times, you'll need to seed the call to `periodic-seq
                     (Period/ofDays 1))
 ----
 
+For example, to say hello once per second. Note that the function needs to take an argument.
+[source,clojure]
+----
+(chime/chime-at (chime/periodic-seq (Instant/now) (Duration/ofSeconds 1))
+                        (fn [time]
+                          (println "hello")))
+----
+
 === Complex schedules
 
 Because there is no scheduling DSL included with Chime, the sorts of schedules that you can achieve are not limited to the scope of the DSL.
