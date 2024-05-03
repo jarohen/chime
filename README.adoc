@@ -94,12 +94,13 @@ To generate the sequence of times, you'll need to seed the call to `periodic-seq
                     (Period/ofDays 1))
 ----
 
-For example, to say hello once per second. Note that the function needs to take an argument.
+For example, to say hello once per second:
 [source,clojure]
 ----
 (chime/chime-at (chime/periodic-seq (Instant/now) (Duration/ofSeconds 1))
-                        (fn [time]
-                          (println "hello")))
+  ;; note that the function needs to take an argument.
+  (fn [time]
+    (println "hello")))
 ----
 
 === Complex schedules
